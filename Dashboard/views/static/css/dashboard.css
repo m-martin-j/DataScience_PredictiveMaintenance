@@ -1,0 +1,24 @@
+.navbar.navbar-inverse{
+  background-color: #3f51b5;
+  color: #fff !important;
+  border-style: none;
+}
+
+#navbarText > a{
+  color: #fff !important;
+}
+
+.navbar-brand{
+  color: #fff !important;
+}
+
+.navbar{
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+}
+
+body{
+  background-color: #EEE;
+}

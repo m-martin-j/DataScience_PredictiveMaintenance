@@ -1,0 +1,28 @@
+{
+  "name": "PepperApp",
+  "version": "0.1.0",
+  "scripts": {
+    "webpack": "webpack --config views/static/scripts/apps/quiz/webpack.config.js",
+    "webpack:watch": "npm run webpack -- --watch ",
+    "build": "npm run webpack",
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "bluebird": "latest",
+    "body-parser": "latest",
+    "bootstrap": "latest",
+    "bootstrap-filestyle": "latest",
+    "bootstrap-material-design": "0.5.10",
+    "bootstrap3-dialog": "latest",
+    "ejs": "latest",
+    "express": "latest",
+    "jquery": "latest",
+    "jsonfile": "latest",
+    "mdbootstrap": "^4.4.3",
+    "promise": "^6.0.0",
+    "bootstrap-slider": "^9.9.0",
+    "mssql": "^4.1.0",
+    "font-awesome": "^4.7.0",
+    "bootstrap-datepicker": "^1.7.1"
+  }
+}
