@@ -13,14 +13,14 @@ print("Connected!")
 # Select all relevant values
 print("loading all values...")
 tableEntries = cursor.execute(
-    """SELECT AnalogSignalValues, DateTime, PK_DinGroup
+    """SELECT DISTINCT AnalogSignalValues, DateTime, PK_DinGroup
             FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_DiagnosticDataSetDefinition] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[PK_DiagnosticDatasetDefinition])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet].[FK_DiagnosticDataSet] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[PK_DiagnosticDataSet])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DinGroup] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DinGroup].[PK_DinGroup] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[FK_DinGroup])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_ReadOut] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut].[PK_ReadOut])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[Vehicle] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut].[FK_Vehicle] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[Vehicle].[PK_Vehicle])
-            WHERE PK_Vehicle = 2""").fetchall()
+            WHERE PK_Vehicle = 2 ORDER BY DateTime""").fetchall()
 
 # Create new table
 print("creating new table...")
@@ -41,7 +41,13 @@ cnxn.commit()
 
 # format and insert values
 print("formatting values...")
-for entry in tableEntries:
+for i, entry in enumerate(tableEntries):
+    if i != 0 and i < len(tableEntries)-1:
+        dingroups = [tableEntries[i-1][2], tableEntries[i][2], tableEntries[i+1][2]]
+        analogvalues = [tableEntries[i-1][0], tableEntries[i][0], tableEntries[i+1][0]]
+        if all(v == dingroups[0] for v in dingroups) and all(v == analogvalues[0] for v in analogvalues):
+            continue
+
     timestamp = ""
     try:
         timestamp = datetime.strptime(str(entry[1]), "%Y-%m-%d %H:%M:%S.%f").strftime("%Y%m%d %H:%M:%S")
