@@ -13,7 +13,7 @@ print("Connected!")
 # Select all relevant values
 print("loading all values...")
 tableEntries = cursor.execute(
-    """SELECT DISTINCT AnalogSignalValues, DateTime, PK_DinGroup
+    """SELECT DISTINCT AnalogSignalValues, DateTime, PK_DinGroup, DiagnosticDataSetDefinition.Description_L1
             FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_DiagnosticDataSetDefinition] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[PK_DiagnosticDatasetDefinition])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet].[FK_DiagnosticDataSet] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[PK_DiagnosticDataSet])
@@ -27,6 +27,7 @@ print("creating new table...")
 cursor.execute("""CREATE TABLE [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[AnalogValues2] (
     PK_DinGroup smallint,
     DateTime datetime,
+    Description varchar(500),
     AV1 integer,
     AV2 integer,
     AV3 integer,
@@ -54,8 +55,8 @@ for i, entry in enumerate(tableEntries):
     except:
         timestamp = datetime.strptime(str(entry[1]), "%Y-%m-%d %H:%M:%S").strftime("%Y%m%d %H:%M:%S")
 
-    formattedEntry = [entry[2], "'" + timestamp + "'"]
-
+    formattedEntry = [entry[2], "'" + timestamp + "'", "'" + entry[3] + "'"]
+    print(entry[3])
     values = entry[0].split(";", 9)
     del values[len(values)-1]
     for value in values:
