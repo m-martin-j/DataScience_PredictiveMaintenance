@@ -20,11 +20,12 @@ function loadData(value, dingroup, dateStart, dateEnd, type){
     success: function(response) {
       var data = [];
       var dataSeries = { type: type };
-      response = response.map((entry) => {
+
+      dataSeries.dataPoints = response.map((entry) => {
         entry.x = new Date(entry.x);
         return entry;
       });
-      dataSeries.dataPoints = response;
+
       data.push(dataSeries);
       console.log(data);
       drawChart(data);
