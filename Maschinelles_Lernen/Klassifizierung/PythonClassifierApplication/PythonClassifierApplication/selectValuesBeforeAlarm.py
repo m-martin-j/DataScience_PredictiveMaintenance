@@ -2,6 +2,7 @@ import pyodbc
 from datetime import datetime, timedelta
 import numpy as np
 import sys
+import math
 
 #####################################
 # Anleitung: Servername anpassen
@@ -12,9 +13,10 @@ Sources:
 SQL time formatting https://docs.microsoft.com/de-de/sql/t-sql/functions/cast-and-convert-transact-sql
 """
 
-TIMEFRAME = 3 #days
+TIMEFRAME = 0.001 #days
 TIMEFRAME_START = 3 #days prior event period starts ==> 3 days no_event values, 3 days event values, event point of time, relaxation time :: cycle restart
 RELAXATION_TIME = 3 #hours
+FRACTION_TRAIN = 0.75 # fraction of exapmles that will be train data (1-fraction is test data)
 
 SQL_PART_ROUTINE =  """SELECT AnalogSignalValues
             FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
@@ -104,23 +106,68 @@ for entry in eventTimes:
         display_count += len(event_vals)
     sys.stdout.write("\r#ASV tupels collected: %i" % display_count)
     sys.stdout.flush()
-
+print("\n")
 ###########################
 
 
 # make data array and set labels
-data = np.array(event_values)
-data = np.append(data,no_event_values, axis= 0)
+nbr_train_data_event = math.ceil( len(event_values)*FRACTION_TRAIN ) 
+data_train = np.array( event_values[:nbr_train_data_event] )
+print("Laenge data_train mit event =", len(data_train) )
+labels_train = np.ones(nbr_train_data_event)
+print("Laenge labels_train mit event =", len(labels_train) )
+nbr_train_data_no_event = math.ceil( len(no_event_values)*FRACTION_TRAIN ) 
+data_train = np.append( data_train, no_event_values[:nbr_train_data_no_event], axis = 0 )
+print("Laenge data_train mit event + ohne event =", len(data_train) )
+labels_train = np.append( labels_train, np.zeros(nbr_train_data_no_event), axis = 0 )
+print("Laenge labels_train mit event + ohne event =", len(labels_train) )
 
-labels = np.ones((len(event_values),1))
-count_ones = len(labels)
-temp1 = np.zeros((len(no_event_values),1))
-count_zeros = len(temp1)
-labels = np.append(labels,temp1,axis= 0)
+data_test = np.array( event_values[nbr_train_data_event:] )
+print("Laenge data_test mit event =", len(data_test) )
+labels_test = np.ones(len(event_values) - nbr_train_data_event)
+print("Laenge labels_test mit event =", len(labels_test) )
+data_test = np.append( data_test, no_event_values[nbr_train_data_no_event:], axis = 0 )
+print("Laenge data_test mit event + ohne event =", len(data_test) )
+labels_test = np.append( labels_test, np.zeros(len(no_event_values)-nbr_train_data_no_event), axis = 0 ) 
+print("Laenge labels_test mit event + ohne event =", len(labels_test) )
 
-
-print('  = Nbr. of Training Data Points')
-print('Nbr. of Labels = %s (1:%s, 0:%s)' % (len(labels),count_ones,count_zeros))
+print("\n\nNumber of data_train with event + no_event =", len(data_train))
+print("Number of labels_train = %s (1:%s, 0:%s)" % (len(labels_train), np.count_nonzero(labels_train), len(labels_train)-np.count_nonzero(labels_train)) )
+print("Number of data_test with event + no_event =", len(data_test))
+print("Number of labels_test = %s (1:%s, 0:%s)" % (len(labels_test), np.count_nonzero(labels_test), len(labels_test)-np.count_nonzero(labels_test)) )
 print('-------------------------------')
 
 
+
+####################################################################
+# SVM
+from sklearn.svm import SVC
+from sklearn import metrics
+
+
+lin_classifier = SVC()
+lin_classifier.fit(data_train, labels_train)
+a = lin_classifier.predict(data_test)
+cfm1 = metrics.confusion_matrix(labels_test, a)
+
+#True negative
+tn = cfm1[0][0]
+#False positive
+fp = cfm1[0][1]
+#False negative
+fn = cfm1[1][0] 
+#True positive
+tp = cfm1[1][1]
+
+print(cfm1)
+
+genauigkeit = lin_classifier.score(data_test, labels_test) 
+print('Genauigkeit: ', genauigkeit)
+tpr = tp/(tp+fn)
+print('truepositiverate:', tpr)
+fpr = fp/(fp+tn)
+print('falsepositiverate:', fpr)
+klassifikationsfehler = (fp + fn)/(tp+fp+tn+fn)
+print('Klassifikationsfehler: ', klassifikationsfehler)
+guete = (tp + tn)/(tp+fp+tn+fn)
+print('Güte: ', guete, "\n")
