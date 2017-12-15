@@ -37,3 +37,19 @@ body{
   margin-left: -81px;
   margin-top: -61px;
 }
+
+.form-group{
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.box-body{
+  padding: 5px;
+}
+
+#buttonShow{
+  margin: 10px;
+  margin-top: 20px;
+  height: 40px;
+  width: 50px;
+}

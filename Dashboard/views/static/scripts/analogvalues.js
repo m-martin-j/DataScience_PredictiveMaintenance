@@ -105,6 +105,21 @@ $( document ).ready(function() {
 
   $( "#buttonShow" ).click(function() {
     showLoadingView();
-    loadData(parseInt($("#inputValue").val()), parseInt($("#inputDingroup").val()), $("#dateStart").val(), $("#dateEnd").val(), $("#inputVisualize").val())
+    var dingroup = $("#inputDingroup").val();
+    if (dingroup.includes("(")){
+      dingroup = dingroup.substring(dingroup.lastIndexOf("(")+1,dingroup.lastIndexOf(")"));
+    }
+    loadData(parseInt(($("#inputValue").prop('selectedIndex') + 1) + ""), dingroup, $("#dateStart").val(), $("#dateEnd").val(), $("#inputVisualize").val())
+  });
+
+  $( "#inputDingroup" ).change(function() {
+    $("#inputValue").empty();
+    var selectedDingroup = $("#inputDingroup").val();
+    if (!dingroupValues.hasOwnProperty(selectedDingroup)) {
+      selectedDingroup = "default";
+    }
+    dingroupValues[selectedDingroup].forEach(entry => {
+      $("#inputValue").append("<option>" + entry + "</option>");
+    })
   });
 });
