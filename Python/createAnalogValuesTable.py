@@ -43,12 +43,6 @@ cnxn.commit()
 # format and insert values
 print("formatting values...")
 for i, entry in enumerate(tableEntries):
-    if i != 0 and i < len(tableEntries)-1:
-        dingroups = [tableEntries[i-1][2], tableEntries[i][2], tableEntries[i+1][2]]
-        analogvalues = [tableEntries[i-1][0], tableEntries[i][0], tableEntries[i+1][0]]
-        if all(v == dingroups[0] for v in dingroups) and all(v == analogvalues[0] for v in analogvalues):
-            continue
-
     timestamp = ""
     try:
         timestamp = datetime.strptime(str(entry[1]), "%Y-%m-%d %H:%M:%S.%f").strftime("%Y%m%d %H:%M:%S")
@@ -56,7 +50,6 @@ for i, entry in enumerate(tableEntries):
         timestamp = datetime.strptime(str(entry[1]), "%Y-%m-%d %H:%M:%S").strftime("%Y%m%d %H:%M:%S")
 
     formattedEntry = [entry[2], "'" + timestamp + "'", "'" + entry[3] + "'"]
-    print(entry[3])
     values = entry[0].split(";", 9)
     del values[len(values)-1]
     for value in values:
