@@ -14,12 +14,17 @@ function DatabaseConnector(){
     });
   }
 
-  this.selectAnalogValues = function(dinGroup, value, dateStart, dateEnd){
+  this.selectAnalogValues = function(dinGroup, value, dateStart, dateEnd, includeZeros){
     if(!this.connection){
       return this.connectToDatabase().then(() => {return this.selectAnalogValues(dinGroup, value, dateStart, dateEnd)});
     }
 
-    return this.connection.request().query('SELECT DateTime, AV' + value + ' FROM AnalogValues2 WHERE PK_DinGroup = ' + dinGroup + " AND DateTime BETWEEN CONVERT(datetime, '" + dateStart + "', 104) AND CONVERT(datetime, '" + dateEnd + "', 104) AND AV" + value + " != 0 ORDER BY DateTime").then(result => {
+    var includeZeroText = "";
+    if(includeZeros){
+       includeZeroText = " AND AV" + value + " != 0";
+    }
+
+    return this.connection.request().query('SELECT DateTime, AV' + value + ' FROM AnalogValues2 WHERE PK_DinGroup = ' + dinGroup + " AND DateTime BETWEEN CONVERT(datetime, '" + dateStart + "', 104) AND CONVERT(datetime, '" + dateEnd + "', 104)" + includeZeroText + " ORDER BY DateTime").then(result => {
       return result.recordsets[0].map((record) => {
         return {x: Date.parse(record["DateTime"]), y: parseInt(record["AV" + value])};
       });

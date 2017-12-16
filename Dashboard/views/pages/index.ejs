@@ -6,6 +6,7 @@
   <script type="text/javascript" src="mdbootstrap/js/popper.min.js"></script>
   <script type="text/javascript" src="bootstrap/dist/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="scripts/canvasjs.min.js"></script>
+  <script type="text/javascript" src="icheck/icheck.min.js"></script>
 </head>
 <body>
   <% include ../partials/navbar %>
@@ -85,8 +86,16 @@
                   <button type="button" id="buttonShow" class="btn btn-block btn-primary"><i class="fa fa-play fa-lg"></i></button>
                 </div>
               </div>
+              <div class="form-row checkbox-row">
+                <div class="form-group col-md-2">
+                  <input type="checkbox" class="checkbox" id="checkboxZero" text="0 anzeigen">
+                </div>
+                <div class="form-group col-md-3">
+                  <input type="checkbox" class="checkbox" id="checkboxRange" text="Normalen Bereich anzeigen" checked>
+                </div>
+              </div>
             </form>
-            <div id="chart1" style="height: 370px; width: 100%; margin-top: 85px;">
+            <div id="chart1" style="height: 370px; width: 100%; margin-top: 100px;">
               <img id="loadingImage" src="images/loading_train.gif"/>
             </div>
           </div>

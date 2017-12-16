@@ -23,6 +23,7 @@
     "bootstrap-slider": "^9.9.0",
     "mssql": "^4.1.0",
     "font-awesome": "^4.7.0",
-    "bootstrap-datepicker": "^1.7.1"
+    "bootstrap-datepicker": "^1.7.1",
+    "icheck": "^1.0.2"
   }
 }

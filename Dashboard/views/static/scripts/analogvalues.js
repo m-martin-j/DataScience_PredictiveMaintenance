@@ -54,7 +54,8 @@ function loadData(value, dingroup, dateStart, dateEnd, type){
       value: value,
       dingroup: dingroup,
       dateStart: dateStart,
-      dateEnd: dateEnd
+      dateEnd: dateEnd,
+      includeZeros: $("#checkboxZero").parent().hasClass('checked')
     },
     success: function(response) {
       var data = [];
@@ -65,7 +66,9 @@ function loadData(value, dingroup, dateStart, dateEnd, type){
         return entry;
       });
 
-      data.push(calculateNormalRange(dataSeries.dataPoints));
+      if($("#checkboxRange").parent().hasClass('checked')){
+        data.push(calculateNormalRange(dataSeries.dataPoints));
+      }
       data.push(dataSeries);
       drawChart(data);
     },
@@ -160,5 +163,12 @@ $( document ).ready(function() {
     dingroupValues[selectedDingroup].forEach(entry => {
       $("#inputValue").append("<option>" + entry + "</option>");
     })
+  });
+
+  $(".checkbox").each(function() {
+    $(this).iCheck({
+      checkboxClass: 'icheckbox_line-blue',
+      insert: '<div class="icheck_line-icon"></div>' + $(this).attr("text")
+    });
   });
 });

@@ -7,7 +7,7 @@ router.get('/', function (req, res) {
 });
 
 router.get('/api/analogValues', function(req, res){
-  DatabaseConnector.selectAnalogValues(req.query.dingroup, req.query.value, req.query.dateStart, req.query.dateEnd).then(result => {
+  DatabaseConnector.selectAnalogValues(req.query.dingroup, req.query.value, req.query.dateStart, req.query.dateEnd, req.query.includeZeros).then(result => {
     console.log("sending result");
     res.json(result);
   });
