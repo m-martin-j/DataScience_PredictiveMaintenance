@@ -6,6 +6,45 @@ CanvasJS.addCultureInfo("de",
                     shortMonths: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
                });
 
+ function calculateStandardDeviation(values){
+   var avg = calculateAverage(values);
+
+   var squareDiffs = values.map(function(value){
+     var diff = value - avg;
+     var sqrDiff = diff * diff;
+     return sqrDiff;
+   });
+
+   var avgSquareDiff = calculateAverage(squareDiffs);
+
+   var stdDev = Math.sqrt(avgSquareDiff);
+   return stdDev;
+ }
+
+ function calculateAverage(data){
+   var sum = data.reduce(function(sum, value){
+     return sum + value;
+   }, 0);
+
+   var avg = sum / data.length;
+   return avg;
+ }
+
+ function calculateNormalRange(data){
+   var firstDate = data[0].x;
+   var lastDate = data[data.length - 1].x;
+   var values = data.map(entry => {return entry.y});
+   var average = calculateAverage(values);
+   var standardDeviation = calculateStandardDeviation(values);
+
+   var dataSeries = { type: "rangeSplineArea" };
+   dataSeries.dataPoints = [
+     {x: firstDate, y: [average - standardDeviation, average + standardDeviation]},
+     {x: lastDate, y: [average - standardDeviation, average + standardDeviation]}
+   ];
+   return dataSeries;
+ }
+
 function loadData(value, dingroup, dateStart, dateEnd, type){
   $.ajax({
     url: "/api/analogValues",
@@ -26,8 +65,8 @@ function loadData(value, dingroup, dateStart, dateEnd, type){
         return entry;
       });
 
+      data.push(calculateNormalRange(dataSeries.dataPoints));
       data.push(dataSeries);
-      console.log(data);
       drawChart(data);
     },
     error: function(err) {
