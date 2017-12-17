@@ -38,6 +38,23 @@ body{
   margin-top: -61px;
 }
 
+#loadingImageWarnings{
+  width: 162px;
+  height: 122px;
+  top: 50%;
+  left: 50%;
+}
+
+#imageContainer {
+  width: 100%;
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%);
+  position: absolute; /*or fixed*/
+  left: 50%;
+  top: 50%;
+  text-align: center;
+}
+
 .form-group{
   padding-left: 5px;
   padding-right: 5px;
@@ -53,4 +70,12 @@ body{
   margin-top: 20px;
   height: 40px;
   width: 50px;
+}
+
+.checkBoxContainer > div{
+  margin-top: 25px;
+}
+
+#warningTable_wrapper{
+  padding: 10px;
 }
