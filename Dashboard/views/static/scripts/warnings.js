@@ -65,7 +65,7 @@ $( document ).ready(function() {
 
   $("#buttonShow").click(() => {
     $("#tableContainer").empty();
-    $("#tableContainer").parent().append('<div id="imageContainer"><img id="loadingImageWarnings" src="images/loading_train.gif"/></div>');
+    $("#tableContainer").parent().append('<div id="imageContainer"><div id="loadingImageWarnings"></div></div>');
     loadData();
   });
 

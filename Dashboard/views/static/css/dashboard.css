@@ -36,13 +36,18 @@ body{
   left: 50%;
   margin-left: -81px;
   margin-top: -61px;
+  animation: loading-gif steps(8) 0.5s infinite both;
+  background: url(/../images/loading_train.png) 0 0 no-repeat;
 }
 
 #loadingImageWarnings{
+  display: block;
   width: 162px;
   height: 122px;
-  top: 50%;
-  left: 50%;
+  margin:0 auto;
+  background: url(/../images/loading_train.png) 0 0 no-repeat;
+  background-size: auto;
+  animation: loading-gif steps(8) 0.5s infinite both;
 }
 
 #imageContainer {
@@ -53,6 +58,15 @@ body{
   left: 50%;
   top: 50%;
   text-align: center;
+}
+
+@keyframes loading-gif {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 100%;
+  }
 }
 
 .form-group{
@@ -79,3 +93,5 @@ body{
 #warningTable_wrapper{
   padding: 10px;
 }
+
+#loadingImageWarnings

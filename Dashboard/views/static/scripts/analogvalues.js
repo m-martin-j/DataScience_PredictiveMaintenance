@@ -135,11 +135,12 @@ function drawPieChart(){
 
 function showLoadingView(){
   $("#chart1").empty();
-  $("#chart1").append('<img id="loadingImage" src="images/loading_train.gif"/>');
+  $("#chart1").append('<div id="loadingImage" ></div>');
   $("#loadingImage").css("visibility", "visible");
 }
 
 $( document ).ready(function() {
+  $("#loadingImage").css("visibility", "hidden");
   drawPieChart();
   $('.input-daterange').datepicker({
     format: 'dd.mm.yyyy'
