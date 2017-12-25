@@ -1,5 +1,5 @@
 {
-  "name": "PepperApp",
+  "name": "Dashboard",
   "version": "0.1.0",
   "scripts": {
     "webpack": "webpack --config views/static/scripts/apps/quiz/webpack.config.js",

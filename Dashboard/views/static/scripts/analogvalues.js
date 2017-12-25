@@ -58,6 +58,11 @@ function loadData(value, dingroup, dateStart, dateEnd, type){
       includeZeros: $("#checkboxZero").parent().hasClass('checked')
     },
     success: function(response) {
+      if(response.length == 0){
+        $("#loadingImage").css("visibility", "hidden");
+        alert("Zu diesem Filter existieren keine Daten");
+        return;
+      }
       var data = [];
       var dataSeries = { type: type };
 
