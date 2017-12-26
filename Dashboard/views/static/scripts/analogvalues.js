@@ -6,21 +6,6 @@ CanvasJS.addCultureInfo("de",
                     shortMonths: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
                });
 
- function calculateStandardDeviation(values){
-   var avg = calculateAverage(values);
-
-   var squareDiffs = values.map(function(value){
-     var diff = value - avg;
-     var sqrDiff = diff * diff;
-     return sqrDiff;
-   });
-
-   var avgSquareDiff = calculateAverage(squareDiffs);
-
-   var stdDev = Math.sqrt(avgSquareDiff);
-   return stdDev;
- }
-
  function calculateAverage(data){
    var sum = data.reduce(function(sum, value){
      return sum + value;
@@ -30,17 +15,52 @@ CanvasJS.addCultureInfo("de",
    return avg;
  }
 
+ function calculatePercentageOfValuesInRange(values, rangeLowerBound, rangeUpperBound){
+   var countValuesInRange = values.reduce((prevVal, value) => {
+     if (value <= rangeUpperBound && value >= rangeLowerBound){
+       return prevVal + 1;
+     }
+     return prevVal;
+   });
+
+   return (countValuesInRange/values.length)*100;
+ }
+
+ function getNextHighestValue(arr, value) {
+    var i = arr.length;
+    while (arr[--i] > value);
+    return arr[++i];
+}
+
  function calculateNormalRange(data){
    var firstDate = data[0].x;
    var lastDate = data[data.length - 1].x;
    var values = data.map(entry => {return entry.y});
    var average = calculateAverage(values);
-   var standardDeviation = calculateStandardDeviation(values);
+   var negativeValuesExist = false;
+   for(var i = 0; i < values.length; i++){
+     if(values[i] < 0){
+       negativeValuesExist = true;
+       values = values.map(entry => {return Math.abs(entry)});
+       break;
+     }
+   }
+   values.sort(function(a, b){return a-b});
+
+   var deviation = 0;
+   while(calculatePercentageOfValuesInRange(values, average - deviation, average + deviation) < 80){
+     deviation = getNextHighestValue(values, average + deviation) - average;
+   }
+
+   var lowerBound = average - deviation;
+   if(!negativeValuesExist){
+     lowerBound = Math.max(0, lowerBound);
+   }
 
    var dataSeries = { type: "rangeSplineArea" };
    dataSeries.dataPoints = [
-     {x: firstDate, y: [average - standardDeviation, average + standardDeviation]},
-     {x: lastDate, y: [average - standardDeviation, average + standardDeviation]}
+     {x: firstDate, y: [lowerBound, average + deviation]},
+     {x: lastDate, y: [lowerBound, average + deviation]}
    ];
    return dataSeries;
  }
