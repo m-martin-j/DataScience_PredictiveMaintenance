@@ -21,7 +21,7 @@ TIMEFRAME_EVENT_ASV = 3*24 # hours
 TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
 TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
 
-FRACTION_TRAIN = 0.75 # fraction of exapmles that will be train data (1-fraction is test data)
+FRACTION_TRAIN = 0.7 # fraction of exapmles that will be train data (1-fraction is test data)
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -105,11 +105,10 @@ for event_time in event_times:
     sys.stdout.write("\r#event ASV tupels collected: %i" % display_count)
     sys.stdout.flush()
 #####################################
-print('\n')
 
 
 ##################################### grab no_event AnalogSignalValues
-print('start collecting no_event ASV')
+print('\nstart collecting no_event ASV')
 no_event_ASV = []
 no_event_period_start = event_time_last + timedelta(hours=TIME_AFTER_LAST_EVENT) 
 no_event_period_end = no_event_period_start + timedelta(hours=TIMEFRAME_NO_EVENT_ASV)
@@ -130,13 +129,104 @@ print('--%--')
 
 
 ##################################### prepare training and test data
-
-# TODO: train test split von scikit learn verwenden
+from sklearn.model_selection import train_test_split
 
 print('start preparing training and test data')
 n_event_ASV = len(event_ASV)
 n_no_event_ASV = len(no_event_ASV)
+print(n_event_ASV)
+data_tuples = np.array(event_ASV)
+data_tuples = np.append(data_tuples, no_event_ASV ,axis=0)
 
+labels = np.ones(n_event_ASV)
+labels = np.append(labels, np.zeros(n_no_event_ASV), axis=0)
+
+data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,test_size=(1-FRACTION_TRAIN)) # randomize training and test data sets
+
+print('data preparation finished:')
+print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), sum(labels_train), len(labels_train)-sum(labels_train) ) )
+print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), sum(labels_test), len(labels_test)-sum(labels_test) ) )
+print('--%--')
+#####################################
+
+
+
+##################################### implement SVM
+from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn import metrics
+# linear
+print('start LinearSVC training')
+lin_classifier = LinearSVC(dual=False)
+lin_classifier.fit(data_train, labels_train)
+prediction_lin_classifier = lin_classifier.predict(data_test)
+print('LinearSVC training finished')
+
+
+# rbf
+print('start rbf SVC training (duration approx 10 min)')
+rbf_classifier = SVC()
+rbf_classifier.fit(data_train, labels_train)
+prediction_rbf_classifier = rbf_classifier.predict(data_test)
+print('rbf SVC training finished')
+print('--%--\n')
+##################################### 
+
+
+
+##################################### evaluation of results
+print('evaluation metrics')
+# cross validation http://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
+## linear ##
+score_lin_classifier = lin_classifier.score(data_test, labels_test) # precision
+print('linear classifier\nscore on test data:',score_lin_classifier)
+
+cfm1 = metrics.confusion_matrix(labels_test, prediction_lin_classifier)
+#True negative
+tn = cfm1[0][0]
+#False positive
+fp = cfm1[0][1]
+#False negative
+fn = cfm1[1][0] 
+#True positive
+tp = cfm1[1][1]
+print('confusion matrix:', cfm1, sep='\n')
+
+tpr = tp/(tp+fn)
+print('true positive rate:', tpr)
+fpr = fp/(fp+tn)
+print('false positive rate:', fpr)
+classification_error = (fp + fn)/(tp+fp+tn+fn)
+print('classification error: ', classification_error)
+print('\n')
+
+## rbf ##
+score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
+print('rbf classifier\nscore on test data:',score_rbf_classifier)
+
+cfm2 = metrics.confusion_matrix(labels_test, prediction_rbf_classifier)
+tn = cfm2[0][0]
+fp = cfm2[0][1]
+fn = cfm2[1][0] 
+tp = cfm2[1][1]
+print('confusion matrix:', cfm2, sep='\n')
+
+tpr = tp/(tp+fn)
+print('true positive rate:', tpr)
+fpr = fp/(fp+tn)
+print('false positive rate:', fpr)
+classification_error = (fp + fn)/(tp+fp+tn+fn)
+print('classification error: ', classification_error)
+##################################### 
+
+
+
+
+
+
+
+##################################### BACKUP
+"""
 # quantity of train and test data
 n_event_ASV_train = math.ceil(FRACTION_TRAIN*n_event_ASV)
 n_event_ASV_test = n_event_ASV - n_event_ASV_train
@@ -162,67 +252,4 @@ data_test = np.append( data_test, no_event_ASV[n_no_event_ASV_train:], axis=0 )
 #print(data_test)
 #print('%i soll sein %i soll sein %i' % (len(data_test), n_event_ASV_test+n_no_event_ASV_test, len(labels_test)) )
 #print('\n\n\n')
-
-print('data preparation finished:')
-print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), n_event_ASV_train, n_no_event_ASV_train) )
-print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), n_event_ASV_test, n_no_event_ASV_test) )
-print('--%--')
-#####################################
-
-
-
-##################################### implement SVM
-from sklearn.svm import LinearSVC
-from sklearn.svm import SVC
-from sklearn import metrics
-# linear
-print('start LinearSVC implementation')
-lin_classifier = LinearSVC(dual=False)
-lin_classifier.fit(data_train, labels_train)
-prediction_lin_classifier = lin_classifier.predict(data_test)
-print('LinearSVC implementation finished')
-
-
-# rbf
-print('start rbf SVC implementation')
-rbf_classifier = SVC()
-rbf_classifier.fit(data_train, labels_train)
-prediction_rbf_classifier = rbf_classifier.predict(data_test)
-print('rbf SVC implementation finished')
-##################################### 
-
-
-
-##################################### evaluation of results
-# linear
-score_lin_classifier = lin_classifier.score(data_test, labels_test) # precision
-print('score of linear classifier on test data:',score_lin_classifier)
-
-cfm1 = metrics.confusion_matrix(labels_test, prediction_lin_classifier)
-#True negative
-tn = cfm1[0][0]
-#False positive
-fp = cfm1[0][1]
-#False negative
-fn = cfm1[1][0] 
-#True positive
-tp = cfm1[1][1]
-print(cfm1)
-
-tpr = tp/(tp+fn)
-print('true positive rate:', tpr)
-fpr = fp/(fp+tn)
-print('false positive rate:', fpr)
-klassifikationsfehler = (fp + fn)/(tp+fp+tn+fn)
-print('classification error: ', klassifikationsfehler)
-
-
-# rbf
-score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
-print('score of rbf classifier on test data:',score_rbf_classifier)
-
-cfm2 = metrics.confusion_matrix(labels_test, prediction_rbf_classifier)
-print(cfm2)
-
-##################################### 
-
+"""
