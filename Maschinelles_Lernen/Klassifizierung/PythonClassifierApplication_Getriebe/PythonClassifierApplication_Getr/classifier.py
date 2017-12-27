@@ -2,6 +2,7 @@ import sys
 from datetime import datetime, timedelta
 import pyodbc
 import numpy as np
+import math
 
 
 """
@@ -20,6 +21,9 @@ TIMEFRAME_EVENT_ASV = 3*24 # hours
 TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
 TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
 
+FRACTION_TRAIN = 0.75 # fraction of exapmles that will be train data (1-fraction is test data)
+
+
 # following SQL queries execute relevant joins w/o SELECT statement
 SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_DiagnosticDataSetDefinition] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[PK_DiagnosticDatasetDefinition])
@@ -31,6 +35,8 @@ SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b8
 #####################################
 
 print('-----------------------\nSVM on Concerto Data\n-----------------------')
+
+
 
 ##################################### connect to ms sql server
 cnxn = pyodbc.connect("Driver={SQL Server};"
@@ -70,7 +76,7 @@ print('--%--')
 
 
 ##################################### grab event AnalogSignalValues
-print('start grabbing event ASV')
+print('start collecting event ASV')
 prior_event_time = 0
 event_ASV = [] # array containing event ASV tupels
 display_count = 0 # counter for command line output
@@ -98,10 +104,12 @@ for event_time in event_times:
     display_count += len(event_ASV_unformatted)
     sys.stdout.write("\r#event ASV tupels collected: %i" % display_count)
     sys.stdout.flush()
+#####################################
 print('\n')
 
+
 ##################################### grab no_event AnalogSignalValues
-print('start grabbing no_event ASV')
+print('start collecting no_event ASV')
 no_event_ASV = []
 no_event_period_start = event_time_last + timedelta(hours=TIME_AFTER_LAST_EVENT) 
 no_event_period_end = no_event_period_start + timedelta(hours=TIMEFRAME_NO_EVENT_ASV)
@@ -121,11 +129,100 @@ print('--%--')
 
 
 
-##################################### prepare training data
+##################################### prepare training and test data
+
+# TODO: train test split von scikit learn verwenden
+
+print('start preparing training and test data')
 n_event_ASV = len(event_ASV)
 n_no_event_ASV = len(no_event_ASV)
 
-data_train = np.array(event_ASV)
+# quantity of train and test data
+n_event_ASV_train = math.ceil(FRACTION_TRAIN*n_event_ASV)
+n_event_ASV_test = n_event_ASV - n_event_ASV_train
+n_no_event_ASV_train = math.ceil(FRACTION_TRAIN*n_no_event_ASV)
+n_no_event_ASV_test = n_no_event_ASV - n_no_event_ASV_train
 
-print(n_event_ASV, n_no_event_ASV)
+# train and test labels
+labels_train = np.ones(n_event_ASV_train)
+temp_zeros = np.zeros(n_no_event_ASV_train)
+labels_train = np.append( labels_train, temp_zeros, axis = 0 )
+labels_test = np.ones(n_event_ASV_test)
+temp_zeros = np.zeros(n_no_event_ASV_test)
+labels_test = np.append( labels_test, temp_zeros, axis = 0 )
+
+# train and test data tupels
+data_train = np.array(event_ASV[:n_event_ASV_train])
+data_train = np.append( data_train, no_event_ASV[:n_no_event_ASV_train], axis=0 )
+#print(data_train)
+#print('%i soll sein %i soll sein %i' % (len(data_train), n_event_ASV_train+n_no_event_ASV_train, len(labels_train)) )
+#print('\n\n\n')
+data_test = np.array(event_ASV[n_event_ASV_train:])
+data_test = np.append( data_test, no_event_ASV[n_no_event_ASV_train:], axis=0 )
+#print(data_test)
+#print('%i soll sein %i soll sein %i' % (len(data_test), n_event_ASV_test+n_no_event_ASV_test, len(labels_test)) )
+#print('\n\n\n')
+
+print('data preparation finished:')
+print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), n_event_ASV_train, n_no_event_ASV_train) )
+print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), n_event_ASV_test, n_no_event_ASV_test) )
+print('--%--')
+#####################################
+
+
+
+##################################### implement SVM
+from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn import metrics
+# linear
+print('start LinearSVC implementation')
+lin_classifier = LinearSVC(dual=False)
+lin_classifier.fit(data_train, labels_train)
+prediction_lin_classifier = lin_classifier.predict(data_test)
+print('LinearSVC implementation finished')
+
+
+# rbf
+print('start rbf SVC implementation')
+rbf_classifier = SVC()
+rbf_classifier.fit(data_train, labels_train)
+prediction_rbf_classifier = rbf_classifier.predict(data_test)
+print('rbf SVC implementation finished')
+##################################### 
+
+
+
+##################################### evaluation of results
+# linear
+score_lin_classifier = lin_classifier.score(data_test, labels_test) # precision
+print('score of linear classifier on test data:',score_lin_classifier)
+
+cfm1 = metrics.confusion_matrix(labels_test, prediction_lin_classifier)
+#True negative
+tn = cfm1[0][0]
+#False positive
+fp = cfm1[0][1]
+#False negative
+fn = cfm1[1][0] 
+#True positive
+tp = cfm1[1][1]
+print(cfm1)
+
+tpr = tp/(tp+fn)
+print('true positive rate:', tpr)
+fpr = fp/(fp+tn)
+print('false positive rate:', fpr)
+klassifikationsfehler = (fp + fn)/(tp+fp+tn+fn)
+print('classification error: ', klassifikationsfehler)
+
+
+# rbf
+score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
+print('score of rbf classifier on test data:',score_rbf_classifier)
+
+cfm2 = metrics.confusion_matrix(labels_test, prediction_rbf_classifier)
+print(cfm2)
+
+##################################### 
 

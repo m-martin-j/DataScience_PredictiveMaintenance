@@ -22,12 +22,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="classifier_old2.py" />
     <Compile Include="classifier.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="example.py" />
-    <Compile Include="classifier_old.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
