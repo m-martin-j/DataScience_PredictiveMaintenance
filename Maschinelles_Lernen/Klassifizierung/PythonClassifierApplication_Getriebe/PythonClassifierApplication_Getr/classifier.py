@@ -134,7 +134,6 @@ from sklearn.model_selection import train_test_split
 print('start preparing training and test data')
 n_event_ASV = len(event_ASV)
 n_no_event_ASV = len(no_event_ASV)
-print(n_event_ASV)
 data_tuples = np.array(event_ASV)
 data_tuples = np.append(data_tuples, no_event_ASV ,axis=0)
 
@@ -165,7 +164,7 @@ print('LinearSVC training finished')
 
 # rbf
 print('start rbf SVC training (duration approx 10 min)')
-rbf_classifier = SVC()
+rbf_classifier = SVC(cache_size=500)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('rbf SVC training finished')
