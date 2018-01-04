@@ -154,6 +154,7 @@ print('--%--')
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 from sklearn import metrics
+import matplotlib.pyplot as plt
 # linear
 print('start LinearSVC training')
 lin_classifier = LinearSVC(dual=False)
@@ -161,10 +162,9 @@ lin_classifier.fit(data_train, labels_train)
 prediction_lin_classifier = lin_classifier.predict(data_test)
 print('LinearSVC training finished')
 
-
 # rbf
 print('start rbf SVC training (duration approx 10 min)')
-rbf_classifier = SVC(cache_size=500)
+rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('rbf SVC training finished')
@@ -175,7 +175,6 @@ print('--%--\n')
 
 ##################################### evaluation of results
 print('evaluation metrics')
-# cross validation http://scikit-learn.org/stable/modules/cross_validation.html#computing-cross-validated-metrics
 ## linear ##
 score_lin_classifier = lin_classifier.score(data_test, labels_test) # precision
 print('linear classifier\nscore on test data:',score_lin_classifier)
@@ -199,6 +198,21 @@ classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 print('\n')
 
+# ROC curve lin_classifier
+y_score = lin_classifier.decision_function(data_train)
+fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
+roc_auc = metrics.auc(fpr, tpr)
+plt.title('Receiver Operating Characteristic Linear Classifier')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+
+
 ## rbf ##
 score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
 print('rbf classifier\nscore on test data:',score_rbf_classifier)
@@ -216,8 +230,20 @@ fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
-##################################### 
-
+# ROC curve rbf_classifier
+y_score = rbf_classifier.decision_function(data_train)
+fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
+roc_auc = metrics.auc(fpr, tpr)
+plt.title('Receiver Operating Characteristic RBF Classifier')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+#####################################
 
 
 
