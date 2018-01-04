@@ -162,14 +162,14 @@ lin_classifier.fit(data_train, labels_train)
 prediction_lin_classifier = lin_classifier.predict(data_test)
 print('LinearSVC training finished')
 
-'''# rbf
+# rbf
 print('start rbf SVC training (duration approx 10 min)')
 rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('rbf SVC training finished')
 print('--%--\n')
-##################################### '''
+##################################### 
 
 
 
@@ -213,7 +213,7 @@ plt.xlabel('False Positive Rate')
 plt.show()
 
 
-'''## rbf ##
+## rbf ##
 score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
 print('rbf classifier\nscore on test data:',score_rbf_classifier)
 
@@ -243,7 +243,7 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
-#####################################'''
+#####################################
 
 
 
