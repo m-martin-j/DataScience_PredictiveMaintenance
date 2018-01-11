@@ -10,6 +10,10 @@ router.get('/warnings', function (req, res) {
   res.render('pages/warnings');
 });
 
+router.get('/results', function (req, res) {
+  res.render('pages/results');
+});
+
 router.get('/api/analogValues', function(req, res){
   DatabaseConnector.selectAnalogValues(req.query.dingroup, req.query.value, req.query.dateStart, req.query.dateEnd, req.query.includeZeros).then(result => {
     console.log("sending result");
