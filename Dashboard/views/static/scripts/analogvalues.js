@@ -62,8 +62,32 @@ CanvasJS.addCultureInfo("de",
      {x: firstDate, y: [lowerBound, average + deviation]},
      {x: lastDate, y: [lowerBound, average + deviation]}
    ];
+
+   $("#text").text("Ca 80% der Werte liegen im blauen Bereich zwischen " + addCommas(lowerBound + "") + " und " + addCommas(average + deviation + ""));
    return dataSeries;
  }
+
+function addCommas(nStr) {
+    var valueAfterPoint = "";
+    if(nStr.includes(".")){
+      valueAfterPoint = "," + nStr.split(".")[1];
+      if(valueAfterPoint.length > 3){
+        valueAfterPoint = valueAfterPoint.substring(0, 3);
+      }
+      nStr = nStr.split(".")[0];
+    }
+
+    nStr += '';
+    var x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+    }
+
+    return x1 + x2 + valueAfterPoint;
+}
 
 function loadData(value, dingroup, dateStart, dateEnd, type){
   $.ajax({
@@ -164,6 +188,17 @@ function showLoadingView(){
   $("#loadingImage").css("visibility", "visible");
 }
 
+function updateValueNames(){
+  $("#inputValue").empty();
+  var selectedDingroup = $("#inputDingroup").val();
+  if (!dingroupValues.hasOwnProperty(selectedDingroup)) {
+    selectedDingroup = "default";
+  }
+  dingroupValues[selectedDingroup].forEach(entry => {
+    $("#inputValue").append("<option>" + entry + "</option>");
+  });
+}
+
 $( document ).ready(function() {
   $("#loadingImage").css("visibility", "hidden");
   drawPieChart();
@@ -177,19 +212,15 @@ $( document ).ready(function() {
     if (dingroup.includes("(")){
       dingroup = dingroup.substring(dingroup.lastIndexOf("(")+1,dingroup.lastIndexOf(")"));
     }
+    $("#text").text("");
     loadData(parseInt(($("#inputValue").prop('selectedIndex') + 1) + ""), dingroup, $("#dateStart").val(), $("#dateEnd").val(), $("#inputVisualize").val())
   });
 
   $( "#inputDingroup" ).change(function() {
-    $("#inputValue").empty();
-    var selectedDingroup = $("#inputDingroup").val();
-    if (!dingroupValues.hasOwnProperty(selectedDingroup)) {
-      selectedDingroup = "default";
-    }
-    dingroupValues[selectedDingroup].forEach(entry => {
-      $("#inputValue").append("<option>" + entry + "</option>");
-    })
+    updateValueNames();
   });
+
+  updateValueNames();
 
   $(".checkbox").each(function() {
     $(this).iCheck({
