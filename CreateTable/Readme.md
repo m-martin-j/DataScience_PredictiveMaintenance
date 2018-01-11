@@ -1,0 +1,3 @@
+- erstellt eine Tabelle mit allen analogen Werten, DateTime, DinGroup und Description
+- die Tabelle wird für das Dashboard benötigt
+- mit Python 3 ausführen
