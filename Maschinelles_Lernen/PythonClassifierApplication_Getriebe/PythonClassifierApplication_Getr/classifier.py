@@ -21,7 +21,7 @@ TIMEFRAME_EVENT_ASV = 3*24 # hours
 TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
 TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
 
-FRACTION_TRAIN = 0.7 # fraction of exapmles that will be train data (1-fraction is test data)
+FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -34,7 +34,7 @@ SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b8
                   WHERE ReadOut.FK_Vehicle = """+VEHICLE_NUMBER
 #####################################
 
-print('-----------------------\nSVM on Concerto Data\n-----------------------')
+print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n-----------------------')
 
 
 
@@ -70,7 +70,7 @@ event_time_first = event_times[0]
 event_time_last = event_times[-1]
 event_time_diff = event_time_last - event_time_first # time difference between first and last alarm
 print('Event time stamps formatted')
-print('Number of events: %s,\nranging from %s to %s (%s)' % (n_event_times, event_times[0].strftime('%Y/%m/%d %H:%M'), event_times[-1].strftime('%Y/%m/%d %H:%M'), event_time_diff) )
+print('Number of events: %s,\nranging from %s to %s (delta: %s)' % (n_event_times, event_times[0].strftime('%Y/%m/%d %H:%M'), event_times[-1].strftime('%Y/%m/%d %H:%M'), event_time_diff) )
 print('--%--')
 #####################################
 

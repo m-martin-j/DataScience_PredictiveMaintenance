@@ -13,15 +13,19 @@ SQL time formatting https://docs.microsoft.com/de-de/sql/t-sql/functions/cast-an
 ##################################### Global Variables
 SERVERNAME = 'localhost'
 VEHICLE_NUMBER = '2' 
-DEFINITIONNUMBER_EVENT = '41' # consult SQL-query "see_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
-DEFINITIONNUMBER_ASV = '6'
-NUMBER_ASV_POSITIONS = 7 # only the first NUMBER_ASV_POSITIONS positions of ASV string are relevant
-START_EVENTS_FORMATTED = datetime.strptime( '2017-01-17', "%Y-%m-%d") # point of time of very first event AND event ASV
-TIMEFRAME_EVENT_ASV = 3*24 # hours
-TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
-TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
+DEFINITIONNUMBER_EVENT_1 = 111 # consult SQL-query "get_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
+DEFINITIONNUMBER_EVENT_2 = 21
+DEFINITIONNUMBER_ASV = '2'
+NUMBER_ASV_POSITIONS = 2 # only the first NUMBER_ASV_POSITIONS positions of ASV string are relevant
 
-FRACTION_TRAIN = 0.7 # fraction of exapmles that will be train data (1-fraction is test data)
+TIMEFRAME_EVENT_ASV = 3*24 # hours
+
+TIMEFRAME_NO_EVENT_ASV = 16*24 # hours 
+TIME_BEFORE_FIRST_EVENT = 5*24 + TIMEFRAME_NO_EVENT_ASV # hours (no_event values start at that point of time)
+MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV = 2*24 # hours
+MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # minimum time (in hours) between two events to grab no_event values between them
+
+FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -34,7 +38,7 @@ SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b8
                   WHERE ReadOut.FK_Vehicle = """+VEHICLE_NUMBER
 #####################################
 
-print('-----------------------\nSVM on Concerto Data\n-----------------------')
+print('-----------------------\nSVM on Concerto Data\napproach: ENGINE 1\n-----------------------')
 
 
 
@@ -57,9 +61,8 @@ except e: # RETRY
 ##################################### grab and format event time stamps
 event_times_unformatted = cursor.execute("""SELECT StartDateTime """+SQL_PART_ROUTINE+
                                         """ AND TriggerSignalValue = 1  -- otherwise each alarm time is selected twice
-                                        AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_EVENT+"""
-                                        AND StartDateTime >= ?   
-                                        ORDER BY StartDateTime ASC""", (START_EVENTS_FORMATTED)
+                                        AND DiagnosticDataSetDefinition.DefinitionNumber in (?,?)
+                                        ORDER BY StartDateTime ASC""", (DEFINITIONNUMBER_EVENT_1, DEFINITIONNUMBER_EVENT_2) 
                                         ).fetchall()
 print('Event time stamps collected\n--%--')
 event_times = []
@@ -70,27 +73,26 @@ event_time_first = event_times[0]
 event_time_last = event_times[-1]
 event_time_diff = event_time_last - event_time_first # time difference between first and last alarm
 print('Event time stamps formatted')
-print('Number of events: %s,\nranging from %s to %s (%s)' % (n_event_times, event_times[0].strftime('%Y/%m/%d %H:%M'), event_times[-1].strftime('%Y/%m/%d %H:%M'), event_time_diff) )
+print('Number of events: %s,\nranging from %s to %s (delta: %s)' % (n_event_times, event_times[0].strftime('%Y/%m/%d %H:%M'), event_times[-1].strftime('%Y/%m/%d %H:%M'), event_time_diff) )
 print('--%--')
 #####################################
 
 
-##################################### grab event AnalogSignalValues
+
+##################################### grab event AnalogSignalValues and intermediate no_event time periods
 print('start collecting event ASV')
 prior_event_time = 0
 event_ASV = [] # array containing event ASV tupels
+interm_periods_no_event = [] # array containing 
 display_count = 0 # counter for command line output
 
 for event_time in event_times:
-    # calculate relevant time period before event
+    # calculate relevant time period before event for event values
     relevant_period_start = event_time - timedelta(hours=TIMEFRAME_EVENT_ASV)
     if prior_event_time != 0 and prior_event_time >= relevant_period_start: # less than TIMEFRAME_EVENT_ASV hours between two events
         relevant_period_start = prior_event_time
-
-    if relevant_period_start < START_EVENTS_FORMATTED: # values before START_EVENTS_FORMATTED are corrupted
-        relevant_period_start = START_EVENTS_FORMATTED
     
-    # select values in relevant event time period -> LABEL = 1
+    # select event values in relevant event time period -> LABEL = 1
     event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
                                            """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
                                            """ AND StartDateTime >= ? 
@@ -99,6 +101,15 @@ for event_time in event_times:
     for row in event_ASV_unformatted:
         event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
     
+
+    # calculate time period between two events for intermediate no_event values
+    if prior_event_time != 0:
+        delta_two_events = event_time - prior_event_time
+        if delta_two_events >= timedelta(hours=MIN_DELTA_TWO_EVENTS):
+            interm_relevant_period_no_event_start = prior_event_time + timedelta(hours=(MIN_DELTA_TWO_EVENTS-MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV)/2.0)
+            interm_relevant_period_no_event_end = event_time - timedelta(hours=(MIN_DELTA_TWO_EVENTS-MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV)/2.0)
+            interm_periods_no_event.append([interm_relevant_period_no_event_start, interm_relevant_period_no_event_end])
+
     # preparing for next loop iteration
     prior_event_time = event_time
     display_count += len(event_ASV_unformatted)
@@ -107,25 +118,39 @@ for event_time in event_times:
 #####################################
 
 
+
 ##################################### grab no_event AnalogSignalValues
 print('\nstart collecting no_event ASV')
 no_event_ASV = []
-no_event_period_start = event_time_last + timedelta(hours=TIME_AFTER_LAST_EVENT) 
+no_event_period_start = event_time_first - timedelta(hours=TIME_BEFORE_FIRST_EVENT) 
 no_event_period_end = no_event_period_start + timedelta(hours=TIMEFRAME_NO_EVENT_ASV)
-# select values in relevant no_event time period -> LABEL = 0
+# select values in relevant no_event time period before events -> LABEL = 0
 no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
                                        """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
                                        """ AND StartDateTime >= ? 
                                        AND StartDateTime < ?""", (no_event_period_start, no_event_period_end)
                                        ).fetchall()
 for row in no_event_ASV_unformatted:
+    no_event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
+
+# select values in relevant no_event time period between events -> LABEL = 0
+display_count = len(no_event_ASV)
+for interm_no_event in interm_periods_no_event:
+    no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
+                                       """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
+                                       """ AND StartDateTime >= ? 
+                                       AND StartDateTime < ?""", (interm_no_event[0],interm_no_event[1])
+                                       ).fetchall()    
+    for row in no_event_ASV_unformatted:
         no_event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
-print('#no_event ASV tupels collected:', len(no_event_ASV))
-print( 'ranging from %s to %s' % (no_event_period_start.strftime('%Y/%m/%d %H:%M'), no_event_period_end.strftime('%Y/%m/%d %H:%M')) )
-print('--%--')
+    display_count += len(no_event_ASV_unformatted)
+    sys.stdout.write("\r#no_event ASV tupels collected: %i" % display_count)
+    sys.stdout.flush()
+
+#print( '\nranging from %s to %s' % (no_event_period_start.strftime('%Y/%m/%d %H:%M'), no_event_period_end.strftime('%Y/%m/%d %H:%M')) )
 #####################################
-
-
+print('\n--%--')
+'''
 
 
 ##################################### prepare training and test data
@@ -160,24 +185,25 @@ print('start LinearSVC training')
 lin_classifier = LinearSVC(dual=False, C=1)
 lin_classifier.fit(data_train, labels_train)
 prediction_lin_classifier = lin_classifier.predict(data_test)
-print('LinearSVC training finished')
+print('--LinearSVC training finished')
 
 # rbf
 print('start rbf SVC training (duration approx 10 min)')
 rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
-print('rbf SVC training finished')
+print('--rbf SVC training finished')
+print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
 ##################################### 
 
 
 
 ##################################### evaluation of results
-print('evaluation metrics')
+print('evaluation metrics:\n')
 ## linear ##
 score_lin_classifier = lin_classifier.score(data_test, labels_test) # precision
-print('linear classifier\nscore on test data:',score_lin_classifier)
+print('LINEAR CLASSIFIER\nscore on test data:',score_lin_classifier)
 
 cfm1 = metrics.confusion_matrix(labels_test, prediction_lin_classifier)
 #True negative
@@ -196,9 +222,9 @@ fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
-print('\n')
 
 # ROC curve lin_classifier
+print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = lin_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
@@ -215,7 +241,7 @@ plt.show()
 
 ## rbf ##
 score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
-print('rbf classifier\nscore on test data:',score_rbf_classifier)
+print('RBF CLASSIFIER\nscore on test data:',score_rbf_classifier)
 
 cfm2 = metrics.confusion_matrix(labels_test, prediction_rbf_classifier)
 tn = cfm2[0][0]
@@ -230,7 +256,10 @@ fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
+n_sv = rbf_classifier.n_support_
+
 # ROC curve rbf_classifier
+print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = rbf_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
@@ -245,36 +274,12 @@ plt.xlabel('False Positive Rate')
 plt.show()
 #####################################
 
+'''
 
 
+## BACKUP ##
+"""START_EVENTS_FORMATTED = datetime.strptime( '2017-01-17', "%Y-%m-%d") # point of time of very first event AND event ASV
+if relevant_period_start < START_EVENTS_FORMATTED: # values before START_EVENTS_FORMATTED are corrupted  TODO
+        relevant_period_start = START_EVENTS_FORMATTED
 
-
-
-##################################### BACKUP
-"""
-# quantity of train and test data
-n_event_ASV_train = math.ceil(FRACTION_TRAIN*n_event_ASV)
-n_event_ASV_test = n_event_ASV - n_event_ASV_train
-n_no_event_ASV_train = math.ceil(FRACTION_TRAIN*n_no_event_ASV)
-n_no_event_ASV_test = n_no_event_ASV - n_no_event_ASV_train
-
-# train and test labels
-labels_train = np.ones(n_event_ASV_train)
-temp_zeros = np.zeros(n_no_event_ASV_train)
-labels_train = np.append( labels_train, temp_zeros, axis = 0 )
-labels_test = np.ones(n_event_ASV_test)
-temp_zeros = np.zeros(n_no_event_ASV_test)
-labels_test = np.append( labels_test, temp_zeros, axis = 0 )
-
-# train and test data tupels
-data_train = np.array(event_ASV[:n_event_ASV_train])
-data_train = np.append( data_train, no_event_ASV[:n_no_event_ASV_train], axis=0 )
-#print(data_train)
-#print('%i soll sein %i soll sein %i' % (len(data_train), n_event_ASV_train+n_no_event_ASV_train, len(labels_train)) )
-#print('\n\n\n')
-data_test = np.array(event_ASV[n_event_ASV_train:])
-data_test = np.append( data_test, no_event_ASV[n_no_event_ASV_train:], axis=0 )
-#print(data_test)
-#print('%i soll sein %i soll sein %i' % (len(data_test), n_event_ASV_test+n_no_event_ASV_test, len(labels_test)) )
-#print('\n\n\n')
 """
