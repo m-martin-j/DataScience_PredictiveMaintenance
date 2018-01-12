@@ -5,7 +5,7 @@
     <ProjectGuid>e30a81fb-63c4-4af4-8216-0f16014c65bc</ProjectGuid>
     <ProjectTypeGuids>{a41c8ea1-112a-4a2d-9f91-29557995525f};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>classifier.py</StartupFile>
+    <StartupFile>classifier_old.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,13 +22,14 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="classifier - Copy.py" />
     <Compile Include="example.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="package1\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="classifier.py" />
+    <Compile Include="classifier_old.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="package1\" />
