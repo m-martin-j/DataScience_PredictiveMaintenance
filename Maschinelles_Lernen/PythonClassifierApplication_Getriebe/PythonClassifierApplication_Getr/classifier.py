@@ -13,7 +13,7 @@ SQL time formatting https://docs.microsoft.com/de-de/sql/t-sql/functions/cast-an
 ##################################### Global Variables
 SERVERNAME = 'localhost'
 VEHICLE_NUMBER = '2' 
-DEFINITIONNUMBER_EVENT = '41' # consult SQL-query "see_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
+DEFINITIONNUMBER_EVENT = '41' # consult SQL-query "get_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
 DEFINITIONNUMBER_ASV = '6'
 NUMBER_ASV_POSITIONS = 7 # only the first NUMBER_ASV_POSITIONS positions of ASV string are relevant
 START_EVENTS_FORMATTED = datetime.strptime( '2017-01-17', "%Y-%m-%d") # point of time of very first event AND event ASV
