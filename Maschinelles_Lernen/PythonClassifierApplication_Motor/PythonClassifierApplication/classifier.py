@@ -25,7 +25,13 @@ TIME_BEFORE_FIRST_EVENT = 5*24 + TIMEFRAME_NO_EVENT_ASV # hours (no_event values
 MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV = 2*24 # hours
 MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # minimum time (in hours) between two events to grab no_event values between them
 
-FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
+FRACTION_TRAIN = 0.2 # fraction of examples that will be train data
+FRACTION_TEST = 0.2
+
+NORMALIZE = True
+
+MAX_ASV1 = 2500
+MAX_ASV2 = 150
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -100,6 +106,8 @@ for event_time in event_times:
                                            ).fetchall()
     for row in event_ASV_unformatted:
         event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
+        if event_ASV[-1][0] >= MAX_ASV1 or event_ASV[-1][1] >= MAX_ASV2: # delete undefined values
+            del event_ASV[-1]
     
 
     # calculate time period between two events for intermediate no_event values
@@ -124,7 +132,8 @@ print('\nstart collecting no_event ASV')
 no_event_ASV = []
 no_event_period_start = event_time_first - timedelta(hours=TIME_BEFORE_FIRST_EVENT) 
 no_event_period_end = no_event_period_start + timedelta(hours=TIMEFRAME_NO_EVENT_ASV)
-# select values in relevant no_event time period before events -> LABEL = 0
+
+# select values in relevant no_event time period BEFORE events -> LABEL = 0
 no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
                                        """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
                                        """ AND StartDateTime >= ? 
@@ -132,8 +141,10 @@ no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSig
                                        ).fetchall()
 for row in no_event_ASV_unformatted:
     no_event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
+    if no_event_ASV[-1][0] >= MAX_ASV1 or no_event_ASV[-1][1] >= MAX_ASV2: # delete undefined values
+            del no_event_ASV[-1]
 
-# select values in relevant no_event time period between events -> LABEL = 0
+# select values in relevant no_event time period BETWEEN events -> LABEL = 0
 display_count = len(no_event_ASV)
 for interm_no_event in interm_periods_no_event:
     no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
@@ -143,6 +154,8 @@ for interm_no_event in interm_periods_no_event:
                                        ).fetchall()    
     for row in no_event_ASV_unformatted:
         no_event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
+        if no_event_ASV[-1][0] >= MAX_ASV1 or no_event_ASV[-1][1] >= MAX_ASV2: # delete undefined values
+            del no_event_ASV[-1]
     display_count += len(no_event_ASV_unformatted)
     sys.stdout.write("\r#no_event ASV tupels collected: %i" % display_count)
     sys.stdout.flush()
@@ -150,11 +163,12 @@ for interm_no_event in interm_periods_no_event:
 #print( '\nranging from %s to %s' % (no_event_period_start.strftime('%Y/%m/%d %H:%M'), no_event_period_end.strftime('%Y/%m/%d %H:%M')) )
 #####################################
 print('\n--%--')
-'''
+
 
 
 ##################################### prepare training and test data
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 
 print('start preparing training and test data')
 n_event_ASV = len(event_ASV)
@@ -165,8 +179,12 @@ data_tuples = np.append(data_tuples, no_event_ASV ,axis=0)
 labels = np.ones(n_event_ASV)
 labels = np.append(labels, np.zeros(n_no_event_ASV), axis=0)
 
-data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,test_size=(1-FRACTION_TRAIN)) # randomize training and test data sets
+data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,train_size=FRACTION_TRAIN, test_size=FRACTION_TEST) # randomize training and test data sets
 
+if NORMALIZE: # normalize
+    data_train = normalize(data_train, copy=False)
+    data_test = normalize(data_test, copy=False)
+    print('normalized ', end='')
 print('data preparation finished:')
 print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), sum(labels_train), len(labels_train)-sum(labels_train) ) )
 print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), sum(labels_test), len(labels_test)-sum(labels_test) ) )
@@ -180,6 +198,8 @@ from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 from sklearn import metrics
 import matplotlib.pyplot as plt
+
+
 # linear
 print('start LinearSVC training')
 lin_classifier = LinearSVC(dual=False, C=1)
@@ -187,15 +207,16 @@ lin_classifier.fit(data_train, labels_train)
 prediction_lin_classifier = lin_classifier.predict(data_test)
 print('--LinearSVC training finished')
 
+
 # rbf
-print('start rbf SVC training (duration approx 10 min)')
+print('start rbf SVC training (duration approx. 40 min)')
 rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('--rbf SVC training finished')
 print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
-##################################### 
+##################################### '''
 
 
 
@@ -238,6 +259,18 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
 
+# create scatter plot
+x_min, x_max = data_train[:, 0].min() - .5, data_train[:, 0].max() + 5
+y_min, y_max = data_train[:, 1].min() - .5, data_train[:, 1].max() + 5
+plt.figure(figsize=(8, 6))
+plt.clf()
+plt.scatter(data_train[:, 0], data_train[:, 1], c=labels_train, edgecolor='k')
+plt.xlabel('revolutions per minute')
+plt.ylabel('coolant temperature [°C]')
+plt.xlim(x_min, x_max)
+plt.ylim(y_min, y_max)
+plt.show()
+
 
 ## rbf ##
 score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
@@ -272,9 +305,9 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
-#####################################
+#####################################'''
 
-'''
+
 
 
 ## BACKUP ##
