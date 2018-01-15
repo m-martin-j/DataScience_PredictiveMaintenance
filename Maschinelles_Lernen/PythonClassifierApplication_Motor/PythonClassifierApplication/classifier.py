@@ -28,10 +28,10 @@ MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # mi
 FRACTION_TRAIN = 0.2 # fraction of examples that will be train data
 FRACTION_TEST = 0.2
 
-NORMALIZE = True
+NORMALIZE = False
 
 MAX_ASV1 = 2500
-MAX_ASV2 = 150
+MAX_ASV2 = 500
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -185,6 +185,7 @@ if NORMALIZE: # normalize
     data_train = normalize(data_train, copy=False)
     data_test = normalize(data_test, copy=False)
     print('normalized ', end='')
+
 print('data preparation finished:')
 print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), sum(labels_train), len(labels_train)-sum(labels_train) ) )
 print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), sum(labels_test), len(labels_test)-sum(labels_test) ) )
@@ -198,22 +199,24 @@ from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 from sklearn import metrics
 import matplotlib.pyplot as plt
-
+import matplotlib as mpl
+from sklearn.model_selection import cross_val_score
 
 # linear
-print('start LinearSVC training')
+print('start Linear SVC training')
 lin_classifier = LinearSVC(dual=False, C=1)
 lin_classifier.fit(data_train, labels_train)
 prediction_lin_classifier = lin_classifier.predict(data_test)
-print('--LinearSVC training finished')
+print('--Linear SVC training finished')
 
 
 # rbf
-print('start rbf SVC training (duration approx. 40 min)')
+print('start rbf SVC training (duration approx. 1h)')
 rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('--rbf SVC training finished')
+n_sv = rbf_classifier.n_support_
 print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
 ##################################### '''
@@ -244,7 +247,12 @@ print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
-# ROC curve lin_classifier
+# cross validation
+print('started cross validation')
+scores = cross_val_score(lin_classifier, data_tuples, labels, cv=5)
+print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
+
+'''# ROC curve lin_classifier
 print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = lin_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
@@ -257,9 +265,11 @@ plt.xlim([0, 1])
 plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
-plt.show()
+plt.show()'''
 
-# create scatter plot
+
+
+'''# create scatter plot Train
 x_min, x_max = data_train[:, 0].min() - .5, data_train[:, 0].max() + 5
 y_min, y_max = data_train[:, 1].min() - .5, data_train[:, 1].max() + 5
 plt.figure(figsize=(8, 6))
@@ -270,6 +280,29 @@ plt.ylabel('coolant temperature [°C]')
 plt.xlim(x_min, x_max)
 plt.ylim(y_min, y_max)
 plt.show()
+# create scatter plot total
+x_min, x_max = data_tuples[:, 0].min() - .5, data_tuples[:, 0].max() + 5
+y_min, y_max = data_tuples[:, 1].min() - .5, data_tuples[:, 1].max() + 5
+plt.figure(figsize=(8, 6))
+plt.clf()
+plt.scatter(data_tuples[:, 0], data_tuples[:, 1], c=labels, s=(mpl.rcParams['lines.markersize'] ** 2)/8, edgecolor='k')
+plt.xlabel('revolutions per minute')
+plt.ylabel('coolant temperature [°C]')
+plt.xlim(x_min, x_max)
+plt.ylim(y_min, y_max)
+plt.show()
+# create scatter plot total normalized
+data_tuples = normalize(data_tuples, copy=False)
+x_min, x_max = data_tuples[:, 0].min() - .5, data_tuples[:, 0].max() + .5
+y_min, y_max = data_tuples[:, 1].min() - .5, data_tuples[:, 1].max() + .5
+plt.figure(figsize=(8, 6))
+plt.clf()
+plt.scatter(data_tuples[:, 0], data_tuples[:, 1], c=labels, s=(mpl.rcParams['lines.markersize'] ** 2)/8, edgecolor='k')
+plt.xlabel('revolutions per minute')
+plt.ylabel('coolant temperature [°C]')
+plt.xlim(x_min, x_max)
+plt.ylim(y_min, y_max)
+plt.show()'''
 
 
 ## rbf ##
@@ -289,10 +322,14 @@ fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
-n_sv = rbf_classifier.n_support_
+
+# cross validation
+print('started cross validation (approx. 1h)')
+scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=5)
+print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
 # ROC curve rbf_classifier
-print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
+print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = rbf_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
