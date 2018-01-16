@@ -25,13 +25,14 @@ TIME_BEFORE_FIRST_EVENT = 5*24 + TIMEFRAME_NO_EVENT_ASV # hours (no_event values
 MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV = 2*24 # hours
 MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # minimum time (in hours) between two events to grab no_event values between them
 
-FRACTION_TRAIN = 0.2 # fraction of examples that will be train data
+FRACTION_TRAIN = 0.1 # fraction of examples that will be train data
 FRACTION_TEST = 0.2
 
-NORMALIZE = False
+NORMALIZE = False # to normalize or not to normalize ASV
+K = 5 # Parameter k for k-fold cross validation
 
-MAX_ASV1 = 2500
-MAX_ASV2 = 500
+MAX_ASV1 = 5000 # to carefully üpurge undefined values
+MAX_ASV2 = 5000
 
 
 # following SQL queries execute relevant joins w/o SELECT statement
@@ -248,8 +249,8 @@ classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
 # cross validation
-print('started cross validation')
-scores = cross_val_score(lin_classifier, data_tuples, labels, cv=5)
+print('started %s-fold cross validation' % K)
+scores = cross_val_score(lin_classifier, data_tuples, labels, cv=K)
 print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
 '''# ROC curve lin_classifier
@@ -324,8 +325,8 @@ classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
 # cross validation
-print('started cross validation (duration > 3h)')
-scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=5)
+print('started %s-fold cross validation (duration > 5h)' % K)
+scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=K)
 print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
 # ROC curve rbf_classifier
