@@ -324,7 +324,7 @@ classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
 # cross validation
-print('started cross validation (approx. 1h)')
+print('started cross validation (duration > 3h)')
 scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=5)
 print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
