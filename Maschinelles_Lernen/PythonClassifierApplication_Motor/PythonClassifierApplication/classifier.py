@@ -327,9 +327,9 @@ print('true positive rate:', tpr)
 fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
-print('classification error: ', classification_error)
+print('classification error: ', classification_error) 
 
-# Error on training data
+# Error on Training data
 prediction_rbf_classifier_train = rbf_classifier.predict(data_train)
 classification_error_train_rbf = 1.0 - metrics.accuracy_score(labels_train, prediction_rbf_classifier_train, normalize=True)
 print('(classification error on training data: %0.12f)' % classification_error_train_rbf)
