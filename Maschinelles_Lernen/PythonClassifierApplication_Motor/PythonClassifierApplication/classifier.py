@@ -248,13 +248,18 @@ print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
+# Error on Training data
+prediction_lin_classifier_train = lin_classifier.predict(data_train)
+classification_error_train_lin = 1.0 - metrics.accuracy_score(labels_train, prediction_lin_classifier_train, normalize=True)
+print('(classification error on training data: %0.12f)' % classification_error_train_lin)
+
 # cross validation
 print('started %s-fold cross validation' % K)
 scores = cross_val_score(lin_classifier, data_tuples, labels, cv=K)
 print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
 '''# ROC curve lin_classifier
-print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
+print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = lin_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
@@ -324,10 +329,10 @@ print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
-# cross validation
-print('started %s-fold cross validation (duration > 5h)' % K)
-scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=K)
-print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
+# Error on training data
+prediction_rbf_classifier_train = rbf_classifier.predict(data_train)
+classification_error_train_rbf = 1.0 - metrics.accuracy_score(labels_train, prediction_rbf_classifier_train, normalize=True)
+print('(classification error on training data: %0.12f)' % classification_error_train_rbf)
 
 # ROC curve rbf_classifier
 print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
@@ -352,5 +357,11 @@ plt.show()
 """START_EVENTS_FORMATTED = datetime.strptime( '2017-01-17', "%Y-%m-%d") # point of time of very first event AND event ASV
 if relevant_period_start < START_EVENTS_FORMATTED: # values before START_EVENTS_FORMATTED are corrupted  TODO
         relevant_period_start = START_EVENTS_FORMATTED
+
+
+# cross validation
+print('started %s-fold cross validation (duration > 5h)' % K)
+scores = cross_val_score(rbf_classifier, data_tuples, labels, cv=K)
+print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
 """
