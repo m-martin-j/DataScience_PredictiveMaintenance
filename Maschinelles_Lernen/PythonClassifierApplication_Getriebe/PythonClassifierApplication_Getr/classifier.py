@@ -168,6 +168,7 @@ rbf_classifier = SVC(cache_size=1000) # increase memory available for this class
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('--rbf SVC training finished')
+n_sv = rbf_classifier.n_support_
 print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
 ##################################### 
@@ -198,8 +199,13 @@ print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
 
+# Error on Training data
+prediction_lin_classifier_train = lin_classifier.predict(data_train)
+classification_error_train_lin = 1.0 - metrics.accuracy_score(labels_train, prediction_lin_classifier_train, normalize=True)
+print('(classification error on training data: %0.12f)' % classification_error_train_lin)
+
 # ROC curve lin_classifier
-print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
+print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = lin_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
@@ -231,10 +237,14 @@ fpr = fp/(fp+tn)
 print('false positive rate:', fpr)
 classification_error = (fp + fn)/(tp+fp+tn+fn)
 print('classification error: ', classification_error)
-n_sv = rbf_classifier.n_support_
+
+# Error on Training data
+prediction_rbf_classifier_train = rbf_classifier.predict(data_train)
+classification_error_train_rbf = 1.0 - metrics.accuracy_score(labels_train, prediction_rbf_classifier_train, normalize=True)
+print('(classification error on training data: %0.12f)' % classification_error_train_rbf)
 
 # ROC curve rbf_classifier
-print('ROC curve will be shown in a separate window - in order too proceed with the evaluation report, please CLOSE the ROC curve window!\n')
+print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = rbf_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
 roc_auc = metrics.auc(fpr, tpr)
