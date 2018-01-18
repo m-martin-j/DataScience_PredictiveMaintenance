@@ -25,7 +25,7 @@ TIME_BEFORE_FIRST_EVENT = 5*24 + TIMEFRAME_NO_EVENT_ASV # hours (no_event values
 MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV = 2*24 # hours
 MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # minimum time (in hours) between two events to grab no_event values between them
 
-FRACTION_TRAIN = 0.1 # fraction of examples that will be train data
+FRACTION_TRAIN = 0.15 # fraction of examples that will be train data
 FRACTION_TEST = 0.2
 
 NORMALIZE = False # to normalize or not to normalize ASV
@@ -258,7 +258,7 @@ print('started %s-fold cross validation' % K)
 scores = cross_val_score(lin_classifier, data_tuples, labels, cv=K)
 print('cross validation finished: score: %0.2f (+/- %0.2f)' % (scores.mean(), scores.std() * 2))
 
-'''# ROC curve lin_classifier
+# ROC curve lin_classifier
 print('ROC curve will be shown in a separate window - in order to proceed with the evaluation report, please CLOSE the ROC curve window!\n')
 y_score = lin_classifier.decision_function(data_train)
 fpr, tpr, threshold = metrics.roc_curve(labels_train, y_score)
@@ -271,7 +271,7 @@ plt.xlim([0, 1])
 plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
-plt.show()'''
+plt.show()
 
 
 
