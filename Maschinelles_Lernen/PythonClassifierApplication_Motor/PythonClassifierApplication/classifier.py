@@ -25,7 +25,7 @@ TIME_BEFORE_FIRST_EVENT = 5*24 + TIMEFRAME_NO_EVENT_ASV # hours (no_event values
 MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV = 2*24 # hours
 MIN_DELTA_TWO_EVENTS = 2* 7.22*24 + MIN_INTERMEDIATE_TIMEFRAME_NO_EVENT_ASV # minimum time (in hours) between two events to grab no_event values between them
 
-FRACTION_TRAIN = 0.15 # fraction of examples that will be train data
+FRACTION_TRAIN = 0.1 # fraction of examples that will be train data
 FRACTION_TEST = 0.2
 
 NORMALIZE = False # to normalize or not to normalize ASV
@@ -211,7 +211,7 @@ prediction_lin_classifier = lin_classifier.predict(data_test)
 print('--Linear SVC training finished')
 
 
-# rbf
+'''# rbf
 print('start rbf SVC training (duration approx. 1h)')
 rbf_classifier = SVC(cache_size=1000) # increase memory available for this classifier (default: 200MB)
 rbf_classifier.fit(data_train, labels_train)
@@ -311,7 +311,7 @@ plt.ylim(y_min, y_max)
 plt.show()'''
 
 
-## rbf ##
+'''## rbf ##
 score_rbf_classifier = rbf_classifier.score(data_test, labels_test)
 print('RBF CLASSIFIER\nscore on test data:',score_rbf_classifier)
 
