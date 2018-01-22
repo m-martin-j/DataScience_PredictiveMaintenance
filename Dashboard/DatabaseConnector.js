@@ -23,8 +23,6 @@ function DatabaseConnector(){
     if(includeZeros != 'true'){
        includeZeroText = " AND AV" + value + " > 0";
     }
-    console.log(typeof includeZeros);
-    console.log(includeZeroText);
 
     return this.connection.request().query('SELECT DateTime, AV' + value + ' FROM AnalogValues2 WHERE AV' + value + ' < 5000 AND PK_DinGroup = ' + dinGroup + " AND DateTime BETWEEN CONVERT(datetime, '" + dateStart + "', 104) AND CONVERT(datetime, '" + dateEnd + "', 104)" + includeZeroText + " ORDER BY DateTime").then(result => {
       return result.recordsets[0].map((record) => {
