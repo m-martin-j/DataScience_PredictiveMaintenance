@@ -1,4 +1,4 @@
-# datascience_sensor_data
+# DataScience_PredictiveMaintenance
 
 
 Dashboard/CreateTable:
