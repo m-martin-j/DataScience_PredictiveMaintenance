@@ -1,2 +1,5 @@
 Trouble connecting to SQL database?
-- change SERVERNAME variable or find setting to accept 'localhost' as general database name
+- in SQL Server Configuration Manager: SQL Server-Network Configuration - Protocolls for yourserver -
+	TCP/IP enable - IPALL - dynamic: 0 | TCP-Port: 1433
+	
+- another option is to change SERVERNAME variable
