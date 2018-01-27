@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonClassifierApplication_Getr", "PythonClassifierApplication_Getr\PythonClassifierApplication_Getr.pyproj", "{6669A073-DBE2-4C90-A18D-C15012A1B211}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "classifier", "classifier.pyproj", "{18DB0871-F269-4A29-B605-2EBF41D20260}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,13 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6669A073-DBE2-4C90-A18D-C15012A1B211}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6669A073-DBE2-4C90-A18D-C15012A1B211}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18DB0871-F269-4A29-B605-2EBF41D20260}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18DB0871-F269-4A29-B605-2EBF41D20260}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {56CD5F1B-0178-4504-B9F3-0D0EB76B7B5F}
 	EndGlobalSection
 EndGlobal
