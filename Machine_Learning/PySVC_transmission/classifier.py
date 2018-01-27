@@ -1,17 +1,16 @@
 import sys
 from datetime import datetime, timedelta
-import pyodbc
 import numpy as np
 import math
 
+# import additional scripts containing functions
+sys.path.append('../Functions')
 
-"""
-Sources:
-SQL time formatting https://docs.microsoft.com/de-de/sql/t-sql/functions/cast-and-convert-transact-sql
-"""
+import ODBC
 
 ##################################### Global Variables
 SERVERNAME = 'localhost'
+DATABASE_NAME = 'ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004'  #TIF Database
 VEHICLE_NUMBER = '2' 
 DEFINITIONNUMBER_EVENT = '41' # consult SQL-query "get_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
 DEFINITIONNUMBER_ASV = '6'
@@ -24,7 +23,7 @@ TIMEFRAME_NO_EVENT_ASV = 6*24 # hours
 FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
 
 
-# following SQL queries execute relevant joins w/o SELECT statement
+# following SQL queries execute relevant joins, not containing SELECT statement
 SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_DiagnosticDataSetDefinition] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[PK_DiagnosticDatasetDefinition])
                   JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet].[FK_DiagnosticDataSet] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[PK_DiagnosticDataSet])
@@ -34,24 +33,18 @@ SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b8
                   WHERE ReadOut.FK_Vehicle = """+VEHICLE_NUMBER
 #####################################
 
+
+
+
+
+
+
 print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n-----------------------')
 
-
-
 ##################################### connect to ms sql server
-cnxn = pyodbc.connect("Driver={SQL Server};"
-                      "Server="+SERVERNAME+";"
-                      "Database=ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004;" #TIF Database
-                      "Trusted_Connection=yes;")
-try: # Check if connection good
-    cursor = cnxn.cursor() # connection pointer
-    print('Connection to MS SQL Server established\n--%--')
-except e: # RETRY
-    print('Connection to MS SQL Server failed - retrying')
-    if e.__class__ == pyodbc.ProgrammingError:        
-        cnxn == reinit()
-        cursor = cnxn.cursor()
+cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
 #####################################
+
 
 
 ##################################### grab and format event time stamps
@@ -258,37 +251,3 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
 #####################################
-
-
-
-
-
-
-##################################### BACKUP
-"""
-# quantity of train and test data
-n_event_ASV_train = math.ceil(FRACTION_TRAIN*n_event_ASV)
-n_event_ASV_test = n_event_ASV - n_event_ASV_train
-n_no_event_ASV_train = math.ceil(FRACTION_TRAIN*n_no_event_ASV)
-n_no_event_ASV_test = n_no_event_ASV - n_no_event_ASV_train
-
-# train and test labels
-labels_train = np.ones(n_event_ASV_train)
-temp_zeros = np.zeros(n_no_event_ASV_train)
-labels_train = np.append( labels_train, temp_zeros, axis = 0 )
-labels_test = np.ones(n_event_ASV_test)
-temp_zeros = np.zeros(n_no_event_ASV_test)
-labels_test = np.append( labels_test, temp_zeros, axis = 0 )
-
-# train and test data tupels
-data_train = np.array(event_ASV[:n_event_ASV_train])
-data_train = np.append( data_train, no_event_ASV[:n_no_event_ASV_train], axis=0 )
-#print(data_train)
-#print('%i soll sein %i soll sein %i' % (len(data_train), n_event_ASV_train+n_no_event_ASV_train, len(labels_train)) )
-#print('\n\n\n')
-data_test = np.array(event_ASV[n_event_ASV_train:])
-data_test = np.append( data_test, no_event_ASV[n_no_event_ASV_train:], axis=0 )
-#print(data_test)
-#print('%i soll sein %i soll sein %i' % (len(data_test), n_event_ASV_test+n_no_event_ASV_test, len(labels_test)) )
-#print('\n\n\n')
-"""
