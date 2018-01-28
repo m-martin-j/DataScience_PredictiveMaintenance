@@ -9,7 +9,10 @@ sys.path.append('../Global_SVC_Scripts')
 import ODBC
 import Variables
 import ASV_DSV
+import Store_Load as SL
 
+SL.make_data_dir() # create __cached_data__ directory, interrupt if error
+    
 
 ##################################### Global Variables
 SERVERNAME = 'localhost'
@@ -36,6 +39,12 @@ SQL_PART_ROUTINE =  Variables.get_sql_join(DATABASE_NAME, VEHICLE_NUMBER) # SQL 
 
 print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n-----------------------')
 
+# TODO ask whether to connect to DB and load values or to use stored ones
+'''
+SL.store_list(event_times,'event_times')
+a, b, c = SL.load_list('event_times', readtype='time')
+'''
+
 ##################################### connect to ms sql server
 cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
 #####################################
@@ -43,7 +52,6 @@ cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
 ##################################### grab and format event time stamps
 event_times, event_time_first, event_time_last = ASV_DSV.get_event_time_stamps(cursor, SQL_PART_ROUTINE, DEFINITIONNUMBER_EVENT, start_events=START_EVENTS_FORMATTED)
 ##################################### 
-
 
 ##################################### grab event AnalogSignalValues
 print('start collecting event ASV')
