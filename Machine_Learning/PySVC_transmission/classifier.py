@@ -10,8 +10,7 @@ import ODBC
 import Variables
 import ASV_DSV
 import Store_Load as SL
-
-SL.make_data_dir() # create __cached_data__ directory, interrupt if error
+import Various as V
     
 
 ##################################### Global Variables
@@ -39,69 +38,47 @@ SQL_PART_ROUTINE =  Variables.get_sql_join(DATABASE_NAME, VEHICLE_NUMBER) # SQL 
 
 print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n-----------------------')
 
-# TODO ask whether to connect to DB and load values or to use stored ones
-'''
-SL.store_list(event_times,'event_times')
-a, b, c = SL.load_list('event_times', readtype='time')
-'''
+bool_reload = False
 
-##################################### connect to ms sql server
-cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
-#####################################
+if SL.check_dir(): # cached_data exists - use it or set bool to reload from database
+    #bool_reload = input('Use previously stored data for SVC approach? [yes/no] ')
+    bool_reload = V.yes_no( 'Use previously stored data for SVC approach? [yes/no] ' )
 
-##################################### grab and format event time stamps
-event_times, event_time_first, event_time_last = ASV_DSV.get_event_time_stamps(cursor, SQL_PART_ROUTINE, DEFINITIONNUMBER_EVENT, start_events=START_EVENTS_FORMATTED)
-##################################### 
+    if bool_reload: # using stored data
+        print('start reloading stored data...')
+        event_times, event_time_first, event_time_last = SL.load_list('event_times', readtype='time')
+        event_ASV = SL.load_list('event_ASV')
+        no_event_ASV = SL.load_list('no_event_ASV')
+        print('finished reloading stored data...')
 
-##################################### grab event AnalogSignalValues
-print('start collecting event ASV')
-prior_event_time = 0
-event_ASV = [] # array containing event ASV tupels
-display_count = 0 # counter for command line output
 
-for event_time in event_times:
-    # calculate relevant time period before event
-    relevant_period_start = event_time - timedelta(hours=TIMEFRAME_EVENT_ASV)
-    if prior_event_time != 0 and prior_event_time >= relevant_period_start: # less than TIMEFRAME_EVENT_ASV hours between two events
-        relevant_period_start = prior_event_time
+if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wishes to reload those
+    SL.make_data_dir() # create __cached_data__ directory, interrupt if error
 
-    if relevant_period_start < START_EVENTS_FORMATTED: # values before START_EVENTS_FORMATTED are corrupted
-        relevant_period_start = START_EVENTS_FORMATTED
+    ##################################### connect to ms sql server
+    cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
+    #####################################
+
+    ##################################### grab and format event time stamps
+    event_times, event_time_first, event_time_last = ASV_DSV.get_event_time_stamps(cursor, SQL_PART_ROUTINE, DEFINITIONNUMBER_EVENT, start_events=START_EVENTS_FORMATTED)
+    ##################################### 
+
+    ##################################### grab event AnalogSignalValues
+    event_ASV = ASV_DSV.get_event_ASV(cursor, event_times, TIMEFRAME_EVENT_ASV, NUMBER_ASV_POSITIONS, SQL_PART_ROUTINE, DEFINITIONNUMBER_ASV, earliest_valid_ASV = START_EVENTS_FORMATTED)
+    #####################################
     
-    # select values in relevant event time period -> LABEL = 1
-    event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
-                                           """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
-                                           """ AND StartDateTime >= ? 
-                                           AND StartDateTime < ?""", (relevant_period_start, event_time)
-                                           ).fetchall()
-    for row in event_ASV_unformatted:
-        event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
+    ##################################### grab no_event AnalogSignalValues
+    no_event_ASV = ASV_DSV.get_no_event_ASV(cursor, event_time_last, TIME_AFTER_LAST_EVENT, TIMEFRAME_NO_EVENT_ASV, SQL_PART_ROUTINE, DEFINITIONNUMBER_ASV, NUMBER_ASV_POSITIONS, approach='after')
+    #####################################
     
-    # preparing for next loop iteration
-    prior_event_time = event_time
-    display_count += len(event_ASV_unformatted)
-    sys.stdout.write("\r#event ASV tupels collected: %i" % display_count)
-    sys.stdout.flush()
-#####################################
-
-
-##################################### grab no_event AnalogSignalValues
-print('\nstart collecting no_event ASV')
-no_event_ASV = []
-no_event_period_start = event_time_last + timedelta(hours=TIME_AFTER_LAST_EVENT) 
-no_event_period_end = no_event_period_start + timedelta(hours=TIMEFRAME_NO_EVENT_ASV)
-# select values in relevant no_event time period -> LABEL = 0
-no_event_ASV_unformatted = cursor.execute("""SELECT EnvironmentDataSet.AnalogSignalValues """+SQL_PART_ROUTINE+
-                                       """ AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_ASV+
-                                       """ AND StartDateTime >= ? 
-                                       AND StartDateTime < ?""", (no_event_period_start, no_event_period_end)
-                                       ).fetchall()
-for row in no_event_ASV_unformatted:
-        no_event_ASV.append( [ *( float(i) for i in row[0].split(';')[:NUMBER_ASV_POSITIONS] ) ] )
-print('#no_event ASV tupels collected:', len(no_event_ASV))
-print( 'ranging from %s to %s' % (no_event_period_start.strftime('%Y/%m/%d %H:%M'), no_event_period_end.strftime('%Y/%m/%d %H:%M')) )
-print('--%--')
-#####################################
+    ##################################### store lists    
+    print('--%--')
+    print('start storing data')
+    SL.store_list(event_times,'event_times', writetype = 'time')
+    SL.store_list(event_ASV, 'event_ASV')
+    SL.store_list(no_event_ASV, 'no_event_ASV')
+    print('data stored')
+    #####################################
 
 
 
@@ -235,4 +212,4 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
-#####################################
+#####################################'''
