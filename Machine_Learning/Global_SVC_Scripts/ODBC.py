@@ -1,6 +1,9 @@
 import pyodbc
 
+# Database tools for python
+
 def connect_to_DB(servername, dbname):
+    # establish connection to database
     cnxn = pyodbc.connect("Driver={SQL Server};"
                       "Server="+servername+";"
                       "Database="+dbname+";"

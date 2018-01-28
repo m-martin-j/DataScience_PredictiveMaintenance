@@ -1,12 +1,15 @@
+# Transmission SVC
 import sys
 from datetime import datetime, timedelta
 import numpy as np
 import math
 
 # import additional scripts containing functions
-sys.path.append('../Functions')
-
+sys.path.append('../Global_SVC_Scripts')
 import ODBC
+import Variables
+import ASV_DSV
+
 
 ##################################### Global Variables
 SERVERNAME = 'localhost'
@@ -22,15 +25,7 @@ TIMEFRAME_NO_EVENT_ASV = 6*24 # hours
 
 FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
 
-
-# following SQL queries execute relevant joins, not containing SELECT statement
-SQL_PART_ROUTINE =  """FROM [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet] 
-                  JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_DiagnosticDataSetDefinition] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[PK_DiagnosticDatasetDefinition])
-                  JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[EnvironmentDataSet].[FK_DiagnosticDataSet] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[PK_DiagnosticDataSet])
-                  JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DinGroup] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DinGroup].[PK_DinGroup] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSetDefinition].[FK_DinGroup])
-                  JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[DiagnosticDataSet].[FK_ReadOut] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut].[PK_ReadOut])
-                  JOIN [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[Vehicle] ON ([ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[ReadOut].[FK_Vehicle] = [ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004].[dbo].[Vehicle].[PK_Vehicle])
-                  WHERE ReadOut.FK_Vehicle = """+VEHICLE_NUMBER
+SQL_PART_ROUTINE =  Variables.get_sql_join(DATABASE_NAME, VEHICLE_NUMBER) # SQL query that executes relevant joins, not containing SELECT statement
 #####################################
 
 
@@ -45,27 +40,9 @@ print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n--
 cursor = ODBC.connect_to_DB(SERVERNAME, DATABASE_NAME)
 #####################################
 
-
-
 ##################################### grab and format event time stamps
-event_times_unformatted = cursor.execute("""SELECT StartDateTime """+SQL_PART_ROUTINE+
-                                        """ AND TriggerSignalValue = 1  -- otherwise each alarm time is selected twice
-                                        AND DiagnosticDataSetDefinition.DefinitionNumber = """+DEFINITIONNUMBER_EVENT+"""
-                                        AND StartDateTime >= ?   
-                                        ORDER BY StartDateTime ASC""", (START_EVENTS_FORMATTED)
-                                        ).fetchall()
-print('Event time stamps collected\n--%--')
-event_times = []
-for row in event_times_unformatted:
-    event_times.append(row[0])
-n_event_times = len(event_times)
-event_time_first = event_times[0]
-event_time_last = event_times[-1]
-event_time_diff = event_time_last - event_time_first # time difference between first and last alarm
-print('Event time stamps formatted')
-print('Number of events: %s,\nranging from %s to %s (delta: %s)' % (n_event_times, event_times[0].strftime('%Y/%m/%d %H:%M'), event_times[-1].strftime('%Y/%m/%d %H:%M'), event_time_diff) )
-print('--%--')
-#####################################
+event_times, event_time_first, event_time_last = ASV_DSV.get_event_time_stamps(cursor, SQL_PART_ROUTINE, DEFINITIONNUMBER_EVENT, start_events=START_EVENTS_FORMATTED)
+##################################### 
 
 
 ##################################### grab event AnalogSignalValues
