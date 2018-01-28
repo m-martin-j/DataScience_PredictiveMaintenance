@@ -26,7 +26,6 @@
     <Compile Include="package1\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="classifier_old.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="package1\" />
