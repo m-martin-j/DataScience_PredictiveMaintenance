@@ -11,6 +11,7 @@ for further instructions on how to set up the dashboard, see the readme file in 
 Machine_Learning:
 implementation of two support vector machine approaches on sensor signal values
 to learn more, see the readme file in the respective folder "Machine_Learning"
+(made for Windows OS)
 
 R:
 conduct of several statistical analyses, PCA among others
