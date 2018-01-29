@@ -1,8 +1,6 @@
 # Transmission SVC
 import sys
 from datetime import datetime, timedelta
-import numpy as np
-import math
 
 # import additional scripts containing functions
 sys.path.append('../Global_SVC_Scripts')
@@ -25,7 +23,7 @@ TIMEFRAME_EVENT_ASV = 3*24 # hours
 TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
 TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
 
-FRACTION_TRAIN = 0.7 # fraction of examples that will be train data (1-fraction is test data)
+FRACTION_TEST = 0.3 # fraction of examples that will be train data 
 
 SQL_PART_ROUTINE =  Variables.get_sql_join(DATABASE_NAME, VEHICLE_NUMBER) # SQL query that executes relevant joins, not containing SELECT statement
 #####################################
@@ -45,11 +43,11 @@ if SL.check_dir(): # cached_data exists - use it or set bool to reload from data
     bool_reload = V.yes_no( 'Use previously stored data for SVC approach? [yes/no] ' )
 
     if bool_reload: # using stored data
-        print('start reloading stored data...')
+        print('start reloading stored data')
         event_times, event_time_first, event_time_last = SL.load_list('event_times', readtype='time')
         event_ASV = SL.load_list('event_ASV')
         no_event_ASV = SL.load_list('no_event_ASV')
-        print('finished reloading stored data...')
+        print('finished reloading stored data')
 
 
 if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wishes to reload those
@@ -81,26 +79,8 @@ if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wi
     #####################################
 
 
-
-
 ##################################### prepare training and test data
-from sklearn.model_selection import train_test_split
-
-print('start preparing training and test data')
-n_event_ASV = len(event_ASV)
-n_no_event_ASV = len(no_event_ASV)
-data_tuples = np.array(event_ASV)
-data_tuples = np.append(data_tuples, no_event_ASV ,axis=0)
-
-labels = np.ones(n_event_ASV)
-labels = np.append(labels, np.zeros(n_no_event_ASV), axis=0)
-
-data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,test_size=(1-FRACTION_TRAIN)) # randomize training and test data sets
-
-print('data preparation finished:')
-print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), sum(labels_train), len(labels_train)-sum(labels_train) ) )
-print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), sum(labels_test), len(labels_test)-sum(labels_test) ) )
-print('--%--')
+data_train, data_test, labels_train, labels_test = ASV_DSV.create_train_test_data(event_ASV, no_event_ASV, FRACTION_TEST)
 #####################################
 
 

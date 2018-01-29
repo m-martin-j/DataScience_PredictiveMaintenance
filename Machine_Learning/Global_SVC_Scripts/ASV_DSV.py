@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import sys
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 # operations processing database analog signal values and digital signal values
 
@@ -85,3 +87,28 @@ def get_no_event_ASV(cursor, event_time, relaxation_time, timeframe_no_event_ASV
     print( 'ranging from %s to %s' % (no_event_period_start.strftime('%Y/%m/%d %H:%M'), no_event_period_end.strftime('%Y/%m/%d %H:%M')) )
 
     return no_event_ASV
+
+
+def create_train_test_data(event_ASV, no_event_ASV, fraction_test, fraction_train=0):
+    # create numpy data and label array
+    print('start data preparation')
+    n_event_ASV = len(event_ASV)
+    n_no_event_ASV = len(no_event_ASV)
+    data_tuples = np.array(event_ASV)
+    data_tuples = np.append(data_tuples, no_event_ASV ,axis=0)
+
+    labels = np.ones(n_event_ASV)
+    labels = np.append(labels, np.zeros(n_no_event_ASV), axis=0)
+    print('data and label array created')
+    
+    if fraction_train == 0:
+        data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,test_size=fraction_test) # randomize training and test data sets
+    else:
+        data_train, data_test, labels_train, labels_test = train_test_split(data_tuples,labels,train_size=fraction_train, test_size=fraction_test)
+
+    print('data preparation finished:')
+    print('training data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_train), sum(labels_train), len(labels_train)-sum(labels_train) ) )
+    print('test data: %i (event ASV: %i | no_event ASV: %i)' % (len(data_test), sum(labels_test), len(labels_test)-sum(labels_test) ) )
+    print('--%--')
+    
+    return data_train, data_test, labels_train, labels_test
