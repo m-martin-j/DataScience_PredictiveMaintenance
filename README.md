@@ -18,3 +18,9 @@ conduct of several statistical analyses, PCA among others
 
 SQL:
 several SQL queries for the processing of database sensor signal values 
+
+
+
+
+DOWNLOADS:
+MS SQL Server 2012 (free) https://www.microsoft.com/de-de/download/details.aspx?id=29062
