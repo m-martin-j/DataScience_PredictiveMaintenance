@@ -38,8 +38,8 @@ print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n--
 
 bool_reload = False
 
-if SL.check_dir(): # cached_data exists - use it or set bool to reload from database
-    bool_reload = VS.yes_no( 'Use previously stored data for SVC approach? [yes/no] ' )
+if SL.check_dir(): # folder "__cached_data__" exists - use it or set bool to reload from SQL database
+    bool_reload = VS.yes_no( 'Use previously stored data for SVC approach? [yes/no]' )
 
     if bool_reload: # using stored data
         print('start reloading stored data')
@@ -49,7 +49,7 @@ if SL.check_dir(): # cached_data exists - use it or set bool to reload from data
         print('finished reloading stored data')
 
 
-if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wishes to reload those
+if not SL.check_dir() or not bool_reload: # folder "__cached_data__" doesn't exist or user wishes to reload data
     SL.make_data_dir() # create __cached_data__ directory, interrupt if error
 
     ##################################### connect to ms sql server
@@ -68,7 +68,7 @@ if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wi
     no_event_ASV = ASV_DSV.get_no_event_ASV(cursor, event_time_last, TIME_AFTER_LAST_EVENT, TIMEFRAME_NO_EVENT_ASV, SQL_PART_ROUTINE, DEFINITIONNUMBER_ASV, NUMBER_ASV_POSITIONS, approach='after')
     #####################################
 
-    ##################################### store lists
+    ##################################### store lists: write those to files to enable reading in further program runs
     print('--%--')
     print('start storing data')
     SL.store_list(event_times,'event_times', writetype = 'time')
@@ -102,7 +102,7 @@ rbf_classifier = SVC(cache_size=1000) # increase memory available for this class
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('--rbf SVC training finished')
-n_sv = rbf_classifier.n_support_
+n_sv = rbf_classifier.n_support_ # support vector count of respective classes
 print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
 #####################################
@@ -191,4 +191,4 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
-#####################################'''
+#####################################
