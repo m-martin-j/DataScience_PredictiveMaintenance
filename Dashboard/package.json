@@ -10,7 +10,7 @@
   "dependencies": {
     "bluebird": "latest",
     "body-parser": "latest",
-    "bootstrap": "latest",
+    "bootstrap": "^3.0.0",
     "bootstrap-filestyle": "latest",
     "bootstrap-material-design": "0.5.10",
     "bootstrap3-dialog": "latest",
