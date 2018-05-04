@@ -8,22 +8,22 @@ import ODBC
 import Variables
 import ASV_DSV
 import Store_Load as SL
-import Various as V
-    
+import Various as VS
+
 
 ##################################### Global Variables
 SERVERNAME = 'localhost'
 DATABASE_NAME = 'ConcertoDb_TIF_WA6358_59_b9500bbf-f52a-474a-92c5-b863ed31d004'  #TIF Database
-VEHICLE_NUMBER = '2' 
+VEHICLE_NUMBER = '2'
 DEFINITIONNUMBER_EVENT = '41' # consult SQL-query "get_DefinitionNumber_and_respective_DinGroup" to find the correct DefinitionNumber
 DEFINITIONNUMBER_ASV = '6'
 NUMBER_ASV_POSITIONS = 7 # only the first NUMBER_ASV_POSITIONS positions of ASV string are relevant
 START_EVENTS_FORMATTED = datetime.strptime( '2017-01-17', "%Y-%m-%d") # point of time of very first event AND event ASV
 TIMEFRAME_EVENT_ASV = 3*24 # hours
 TIME_AFTER_LAST_EVENT = 10*24 # hours (no_event values start at that point of time)
-TIMEFRAME_NO_EVENT_ASV = 6*24 # hours 
+TIMEFRAME_NO_EVENT_ASV = 6*24 # hours
 
-FRACTION_TEST = 0.3 # fraction of examples that will be train data 
+FRACTION_TEST = 0.3 # fraction of examples that will be train data
 
 SQL_PART_ROUTINE =  Variables.get_sql_join(DATABASE_NAME, VEHICLE_NUMBER) # SQL query that executes relevant joins, not containing SELECT statement
 #####################################
@@ -38,9 +38,8 @@ print('-----------------------\nSVM on Concerto Data\napproach: TRANSMISSION\n--
 
 bool_reload = False
 
-if SL.check_dir(): # cached_data exists - use it or set bool to reload from database
-    #bool_reload = input('Use previously stored data for SVC approach? [yes/no] ')
-    bool_reload = V.yes_no( 'Use previously stored data for SVC approach? [yes/no] ' )
+if SL.check_dir(): # folder "__cached_data__" exists - use it or set bool to reload from SQL database
+    bool_reload = VS.yes_no( 'Use previously stored data for SVC approach? [yes/no]' )
 
     if bool_reload: # using stored data
         print('start reloading stored data')
@@ -50,7 +49,7 @@ if SL.check_dir(): # cached_data exists - use it or set bool to reload from data
         print('finished reloading stored data')
 
 
-if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wishes to reload those
+if not SL.check_dir() or not bool_reload: # folder "__cached_data__" doesn't exist or user wishes to reload data
     SL.make_data_dir() # create __cached_data__ directory, interrupt if error
 
     ##################################### connect to ms sql server
@@ -59,17 +58,17 @@ if not SL.check_dir() or not bool_reload: # cached_data doesn't exist or user wi
 
     ##################################### grab and format event time stamps
     event_times, event_time_first, event_time_last = ASV_DSV.get_event_time_stamps(cursor, SQL_PART_ROUTINE, DEFINITIONNUMBER_EVENT, start_events=START_EVENTS_FORMATTED)
-    ##################################### 
+    #####################################
 
     ##################################### grab event AnalogSignalValues
     event_ASV = ASV_DSV.get_event_ASV(cursor, event_times, TIMEFRAME_EVENT_ASV, NUMBER_ASV_POSITIONS, SQL_PART_ROUTINE, DEFINITIONNUMBER_ASV, earliest_valid_ASV = START_EVENTS_FORMATTED)
     #####################################
-    
+
     ##################################### grab no_event AnalogSignalValues
     no_event_ASV = ASV_DSV.get_no_event_ASV(cursor, event_time_last, TIME_AFTER_LAST_EVENT, TIMEFRAME_NO_EVENT_ASV, SQL_PART_ROUTINE, DEFINITIONNUMBER_ASV, NUMBER_ASV_POSITIONS, approach='after')
     #####################################
-    
-    ##################################### store lists    
+
+    ##################################### store lists: write those to files to enable reading in further program runs
     print('--%--')
     print('start storing data')
     SL.store_list(event_times,'event_times', writetype = 'time')
@@ -103,10 +102,10 @@ rbf_classifier = SVC(cache_size=1000) # increase memory available for this class
 rbf_classifier.fit(data_train, labels_train)
 prediction_rbf_classifier = rbf_classifier.predict(data_test)
 print('--rbf SVC training finished')
-n_sv = rbf_classifier.n_support_
+n_sv = rbf_classifier.n_support_ # support vector count of respective classes
 print('Nbr. of support vectors of respective classes (available only for nonlinear SVC):\nevent values: %i vectors; no_event values: %i vectors' %(n_sv[1], n_sv[0]))
 print('--%--\n')
-##################################### 
+#####################################
 
 
 
@@ -122,7 +121,7 @@ tn = cfm1[0][0]
 #False positive
 fp = cfm1[0][1]
 #False negative
-fn = cfm1[1][0] 
+fn = cfm1[1][0]
 #True positive
 tp = cfm1[1][1]
 print('confusion matrix:', cfm1, sep='\n')
@@ -162,7 +161,7 @@ print('RBF CLASSIFIER\nscore on test data:',score_rbf_classifier)
 cfm2 = metrics.confusion_matrix(labels_test, prediction_rbf_classifier)
 tn = cfm2[0][0]
 fp = cfm2[0][1]
-fn = cfm2[1][0] 
+fn = cfm2[1][0]
 tp = cfm2[1][1]
 print('confusion matrix:', cfm2, sep='\n')
 
@@ -192,4 +191,4 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
-#####################################'''
+#####################################
