@@ -1,6 +1,5 @@
 # DataScience_PredictiveMaintenance
 
-
 Correlation_Analysis:
 various correlations concerning transmission sensor signal values
 
